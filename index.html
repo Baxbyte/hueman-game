@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HUEMAN — The Daily Color Game</title>
+<meta name="description" content="One color puzzle a day. Same for everyone on Earth. Spot the odd shade and find out how good your eyes really are.">
+<meta property="og:title" content="HUEMAN — How hueman are you?">
+<meta property="og:description" content="One color puzzle a day. Same for everyone on Earth. No words, no downloads, no excuses.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E0E12;
+    --surface:#17171D;
+    --surface-2:#1F1F27;
+    --line:#2A2A33;
+    --text:#F4F2EC;
+    --muted:#8C8C98;
+    --daily:#4FA8D8; /* replaced at runtime with today's hue */
+    --tile-gap:10px;
+    --radius:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+  /* ---------- header ---------- */
+  header{
+    width:100%;max-width:520px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px 10px;
+  }
+  .wordmark{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:1.55rem;letter-spacing:.02em;
+    user-select:none;line-height:1;
+  }
+  .wordmark .hue{color:var(--daily);transition:color .6s ease}
+  .wordmark .man{color:var(--text)}
+  .hdr-btns{display:flex;gap:6px}
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;
+    display:grid;place-items:center;
+    color:var(--muted);font-size:1.05rem;
+    border:1px solid var(--line);
+    transition:color .15s,border-color .15s;
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--muted)}
+  .icon-btn:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
+
+  /* ---------- status row ---------- */
+  .status{
+    width:100%;max-width:520px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 22px 2px;
+    font-size:.82rem;color:var(--muted);
+    font-variant-numeric:tabular-nums;
+  }
+  .lives{letter-spacing:3px;font-size:.95rem}
+  .level-label b{color:var(--text);font-weight:700}
+  .daynum{font-weight:600}
+
+  /* ---------- board ---------- */
+  main{
+    width:100%;max-width:520px;flex:1;
+    display:flex;flex-direction:column;align-items:center;
+    padding:10px 20px 28px;
+  }
+  .prompt{
+    font-size:.9rem;color:var(--muted);
+    margin:10px 0 16px;text-align:center;min-height:1.2em;
+  }
+  #board{
+    width:100%;aspect-ratio:1;
+    display:grid;gap:var(--tile-gap);
+    touch-action:manipulation;
+  }
+  .tile{
+    border-radius:var(--radius);
+    transition:transform .12s ease;
+    transform:scale(1);
+  }
+  .tile:active{transform:scale(.96)}
+  .tile:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+  .tile.correct{animation:pop .35s ease}
+  .tile.reveal{outline:3px solid var(--text);outline-offset:-3px;animation:pulse .5s ease 2}
+  @keyframes pop{40%{transform:scale(1.08)}100%{transform:scale(1)}}
+  @keyframes pulse{50%{opacity:.55}}
+  .board-shake{animation:shake .4s ease}
+  @keyframes shake{
+    20%{transform:translateX(-8px)}40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}80%{transform:translateX(5px)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tile,.tile.correct,.tile.reveal,.board-shake{animation:none;transition:none}
+  }
+
+  /* ---------- overlays ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(8,8,12,.78);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;z-index:50;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  }
+  .overlay[hidden]{display:none}
+  .card{
+    width:100%;max-width:420px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:28px 26px;
+    max-height:86dvh;overflow-y:auto;
+  }
+  .card h2{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:1.5rem;margin-bottom:6px;
+  }
+  .card .sub{color:var(--muted);font-size:.9rem;margin-bottom:18px;line-height:1.5}
+  .card p{font-size:.92rem;line-height:1.55;color:var(--text);margin-bottom:12px}
+  .card .fine{font-size:.78rem;color:var(--muted);line-height:1.5}
+  .close-x{
+    float:right;color:var(--muted);font-size:1.3rem;line-height:1;
+    padding:2px 6px;margin:-6px -8px 0 0;
+  }
+  .demo-row{display:flex;gap:8px;margin:14px 0 18px}
+  .demo-row span{flex:1;aspect-ratio:1;border-radius:12px;display:block}
+
+  .btn{
+    display:block;width:100%;
+    padding:15px 18px;border-radius:999px;
+    font-weight:700;font-size:1rem;text-align:center;
+    background:var(--text);color:var(--ink);
+    transition:transform .12s ease,opacity .15s;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);margin-top:10px}
+  .btn.daily-tint{background:var(--daily);color:#fff}
+
+  /* ---------- results ---------- */
+  .result-big{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:3.4rem;line-height:1;
+    margin:4px 0 2px;
+  }
+  .result-pct{
+    font-size:1rem;font-weight:600;color:var(--daily);margin-bottom:16px;
+  }
+  .share-preview{
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:14px;padding:14px;
+    font-size:1rem;letter-spacing:1px;line-height:1.5;
+    word-break:break-all;margin-bottom:18px;
+    font-family:ui-monospace,monospace;
+  }
+  .share-preview .sp-head{
+    font-family:'Inter',sans-serif;font-size:.8rem;color:var(--muted);
+    letter-spacing:0;margin-bottom:6px;
+  }
+  .statgrid{display:flex;gap:8px;margin:6px 0 18px}
+  .stat{
+    flex:1;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:14px;padding:12px 6px;text-align:center;
+  }
+  .stat b{display:block;font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .stat span{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .countdown{
+    text-align:center;font-size:.85rem;color:var(--muted);margin-top:16px;
+    font-variant-numeric:tabular-nums;
+  }
+  .countdown b{color:var(--text)}
+  .toast{
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+    background:var(--text);color:var(--ink);
+    padding:10px 20px;border-radius:999px;
+    font-size:.88rem;font-weight:600;z-index:99;
+    opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  .toast.show{opacity:1}
+  footer{
+    padding:0 0 18px;font-size:.72rem;color:var(--muted);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark" aria-label="Hueman"><span class="hue">HUE</span><span class="man">MAN</span></div>
+  <div class="hdr-btns">
+    <button class="icon-btn" id="btnStats" aria-label="Statistics">▦</button>
+    <button class="icon-btn" id="btnHelp" aria-label="How to play">?</button>
+  </div>
+</header>
+
+<div class="status">
+  <span class="daynum" id="dayNum">#1</span>
+  <span class="level-label">Level <b id="levelNum">1</b></span>
+  <span class="lives" id="lives" aria-label="Lives remaining">●●●</span>
+</div>
+
+<main>
+  <p class="prompt" id="prompt">Tap the odd shade out</p>
+  <div id="board" role="grid" aria-label="Color tiles"></div>
+</main>
+
+<footer>One puzzle a day · Same for everyone on Earth</footer>
+
+<!-- HOW TO PLAY -->
+<div class="overlay" id="ovHelp" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>How to play</h2>
+    <p class="sub">No words to guess. No downloads. Just your eyes.</p>
+    <p><b>1.</b> One tile is a slightly different shade. Tap it.</p>
+    <p><b>2.</b> Each level, the difference gets smaller and the grid gets bigger.</p>
+    <p><b>3.</b> You have three lives. Your final level is your score.</p>
+    <div class="demo-row" id="demoRow" aria-hidden="true"></div>
+    <p>Everyone on Earth gets the <b>same puzzle</b> today. Compare scores, settle arguments.</p>
+    <button class="btn daily-tint" data-close>Play today's puzzle</button>
+    <p class="fine" style="margin-top:14px">Color vision varies from person to person — that's the whole point. Shade differences include brightness shifts, so the game stays playable with most types of color vision deficiency.</p>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="overlay" id="ovStats" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>Statistics</h2>
+    <p class="sub">Saved on this device.</p>
+    <div class="statgrid">
+      <div class="stat"><b id="stPlayed">0</b><span>Played</span></div>
+      <div class="stat"><b id="stBest">–</b><span>Best level</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>Streak</span></div>
+      <div class="stat"><b id="stMax">0</b><span>Max streak</span></div>
+    </div>
+    <button class="btn ghost" data-close>Back</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="overlay" id="ovResult" hidden>
+  <div class="card">
+    <h2 id="resTitle">Out of lives!</h2>
+    <div class="result-big" id="resLevel">Level 12</div>
+    <div class="result-pct" id="resPct">Sharper than ~84% of players</div>
+    <div class="share-preview">
+      <div class="sp-head" id="spHead">HUEMAN #1</div>
+      <div id="spGrid">🟦🟩🟨</div>
+    </div>
+    <button class="btn daily-tint" id="btnShare">Share result</button>
+    <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
+    <div class="countdown">Next puzzle in <b id="cd">00:00:00</b></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ safe storage (works deployed; degrades in sandboxed previews) ============ */
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return store._m && store._m[k] || null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){ (store._m=store._m||{})[k]=v; } }
+};
+
+/* ============ daily seed ============ */
+const EPOCH_UTC = Date.UTC(2026,5,11);            // launch day = puzzle #1
+const now = new Date();
+const todayUTC = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate());
+const DAY = Math.max(1, Math.floor((todayUTC - EPOCH_UTC)/86400000) + 1);
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ============ level math ============ */
+function gridSize(level){
+  if(level<=2) return 2;
+  if(level<=5) return 3;
+  if(level<=9) return 4;
+  if(level<=14) return 5;
+  return 6;
+}
+// perceptual gap shrinks each level; floors keep it humanly possible (barely)
+function delta(level){
+  const dL = Math.max(2.2, 20*Math.pow(0.875,level-1));   // lightness %
+  const dH = Math.max(3,   16*Math.pow(0.880,level-1));   // hue degrees
+  return {dL,dH};
+}
+function levelColors(rng, level){
+  const h = Math.floor(rng()*360);
+  const s = 55 + Math.floor(rng()*30);          // 55–84%
+  const l = 42 + Math.floor(rng()*20);          // 42–61%
+  const {dL,dH} = delta(level);
+  const sL = rng()<0.5?-1:1, sH = rng()<0.5?-1:1;
+  const base = `hsl(${h} ${s}% ${l}%)`;
+  const odd  = `hsl(${(h+sH*dH+360)%360} ${s}% ${Math.min(92,Math.max(8,l+sL*dL))}%)`;
+  return {base, odd, h};
+}
+
+/* ============ percentile (estimated curve, logistic around level 9) ============ */
+function percentile(score){
+  const p = 1/(1+Math.exp(-(score-9)/2.2));
+  return Math.min(99, Math.max(1, Math.round(p*100)));
+}
+
+/* hue → nearest colored emoji square for the share grid */
+function hueEmoji(h){
+  if(h<15||h>=345) return "🟥";
+  if(h<45)  return "🟧";
+  if(h<70)  return "🟨";
+  if(h<165) return "🟩";
+  if(h<255) return "🟦";
+  if(h<345) return "🟪";
+  return "🟦";
+}
+
+/* ============ state ============ */
+let rng, level, lives, locked, practice=false;
+let history = [];   // {h, missed}
+const $ = id => document.getElementById(id);
+const board=$("board"), root=document.documentElement;
+
+function freshGame(isPractice){
+  practice = !!isPractice;
+  rng = practice ? mulberry32(Date.now()&0xffffffff) : mulberry32(DAY*7919+13);
+  level=1; lives=3; locked=false; history=[];
+  $("prompt").textContent = practice ? "Practice — tap the odd shade out" : "Tap the odd shade out";
+  renderLevel();
+}
+
+function renderLevel(){
+  const n = gridSize(level);
+  const c = levelColors(rng, level);
+  const oddIdx = Math.floor(rng()*n*n);
+  if(!practice && level===1) root.style.setProperty("--daily", `hsl(${c.h} 70% 55%)`);
+  $("levelNum").textContent = level;
+  $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
+  board.style.gridTemplateColumns = `repeat(${n},1fr)`;
+  board.innerHTML = "";
+  board.classList.remove("board-shake");
+  for(let i=0;i<n*n;i++){
+    const t = document.createElement("button");
+    t.className="tile";
+    t.style.background = i===oddIdx ? c.odd : c.base;
+    t.setAttribute("aria-label", i===oddIdx ? "tile" : "tile");
+    t.addEventListener("click", ()=>pick(i===oddIdx, t, oddIdx, c));
+    board.appendChild(t);
+  }
+}
+
+function pick(hit, tileEl, oddIdx, c){
+  if(locked) return;
+  if(hit){
+    locked=true;
+    tileEl.classList.add("correct");
+    history.push({h:c.h, missed:false});
+    setTimeout(()=>{ level++; locked=false; renderLevel(); }, 280);
+  }else{
+    locked=true;
+    lives--;
+    history.push({h:c.h, missed:true});
+    board.classList.add("board-shake");
+    const odd = board.children[oddIdx];
+    if(odd) odd.classList.add("reveal");
+    $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
+    setTimeout(()=>{
+      if(lives<=0){ endGame(); }
+      else { locked=false; renderLevel(); }
+    }, 850);
+  }
+}
+
+/* ============ end + share ============ */
+function shareGrid(){
+  let out="", row=0;
+  for(const e of history){
+    out += e.missed ? "⬛" : hueEmoji(e.h);
+    if(++row===5){ out+="\n"; row=0; }
+  }
+  return out.trim();
+}
+function shareText(score){
+  return `HUEMAN #${DAY} 🎨\nLevel ${score} · Top ${100-percentile(score)}%\n\n${shareGrid()}`;
+}
+
+function endGame(){
+  const finalScore = Math.max(1, level-1);   // last level completed (floor of 1)
+  const pct = percentile(finalScore);
+
+  $("resTitle").textContent = practice ? "Practice over" : (pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Out of lives!");
+  $("resLevel").textContent = "Level "+finalScore;
+  $("resPct").textContent = practice ? "Practice rounds aren't ranked" : `Sharper than ~${pct}% of players (est.)`;
+  $("spHead").textContent = `HUEMAN #${DAY} · Level ${finalScore} · Top ${100-pct}%`;
+  $("spGrid").textContent = shareGrid();
+  $("btnShare").style.display = practice ? "none" : "block";
+  $("ovResult").hidden = false;
+
+  if(!practice) saveResult(finalScore);
+  tickCountdown();
+
+  $("btnShare").onclick = async ()=>{
+    const txt = shareText(finalScore);
+    try{
+      if(navigator.share){ await navigator.share({text:txt}); return; }
+      throw 0;
+    }catch(e){
+      try{ await navigator.clipboard.writeText(txt); toast("Copied to clipboard"); }
+      catch(e2){ toast("Couldn't copy — long-press the grid"); }
+    }
+  };
+  $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
+}
+
+function saveResult(score){
+  const last = store.get("hm_lastDay");
+  if(last === String(DAY)) return;             // already counted today
+  const played = (+store.get("hm_played")||0)+1;
+  const best   = Math.max(+store.get("hm_best")||0, score);
+  let streak   = +store.get("hm_streak")||0;
+  streak = (last && +last === DAY-1) ? streak+1 : 1;
+  const maxStreak = Math.max(+store.get("hm_max")||0, streak);
+  store.set("hm_played",played); store.set("hm_best",best);
+  store.set("hm_streak",streak); store.set("hm_max",maxStreak);
+  store.set("hm_lastDay",String(DAY));
+}
+
+/* ============ countdown ============ */
+function tickCountdown(){
+  const el = $("cd");
+  function f(){
+    const n=new Date();
+    const next=Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+1);
+    let s=Math.max(0,Math.floor((next-n.getTime())/1000));
+    const h=String(Math.floor(s/3600)).padStart(2,"0");
+    const m=String(Math.floor(s%3600/60)).padStart(2,"0");
+    const ss=String(s%60).padStart(2,"0");
+    el.textContent=`${h}:${m}:${ss}`;
+  }
+  f(); clearInterval(tickCountdown._t); tickCountdown._t=setInterval(f,1000);
+}
+
+/* ============ UI chrome ============ */
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),1800);
+}
+function openStats(){
+  $("stPlayed").textContent = +store.get("hm_played")||0;
+  $("stBest").textContent   = +store.get("hm_best")||"–";
+  $("stStreak").textContent = +store.get("hm_streak")||0;
+  $("stMax").textContent    = +store.get("hm_max")||0;
+  $("ovStats").hidden=false;
+}
+$("btnHelp").onclick = ()=> $("ovHelp").hidden=false;
+$("btnStats").onclick = openStats;
+document.querySelectorAll("[data-close]").forEach(b=>{
+  b.onclick = ()=> b.closest(".overlay").hidden=true;
+});
+$("dayNum").textContent = "#"+DAY;
+
+/* demo tiles in help modal: 4 same + 1 obviously odd */
+(function(){
+  const row=$("demoRow");
+  for(let i=0;i<5;i++){
+    const s=document.createElement("span");
+    s.style.background = i===3 ? "hsl(200 70% 62%)" : "hsl(200 70% 50%)";
+    row.appendChild(s);
+  }
+})();
+
+/* first visit → show help */
+if(!store.get("hm_seen")){ $("ovHelp").hidden=false; store.set("hm_seen","1"); }
+
+freshGame(false);
+})();
+</script>
+</body>
+</html>
