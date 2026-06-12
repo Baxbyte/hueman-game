@@ -3,15 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>HUEMAN — The Daily Color Game</title>
-<meta name="description" content="One color puzzle a day. Same for everyone on Earth. Spot the odd shade before the clock runs out and find out how good your eyes really are. A Puzzle Page game.">
+<title>HUEMAN — Free Daily Color Game | Spot the Odd Shade</title>
+<meta name="description" content="A free daily color game — like Wordle for your eyes. Spot the odd shade before time runs out, challenge your color vision, and share your score. New puzzle every day. No download, no signup.">
+<link rel="canonical" href="https://hueman-game.vercel.app/">
 <meta property="og:title" content="HUEMAN — How hueman are you?">
 <meta property="og:description" content="One color puzzle a day. Same for everyone on Earth. Beat the clock. No words, no downloads, no excuses.">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="HUEMAN">
 <meta property="og:url" content="https://hueman-game.vercel.app">
+<meta property="og:image" content="https://hueman-game.vercel.app/api/og">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HUEMAN — How hueman are you?">
+<meta name="twitter:description" content="One color puzzle a day. Same for everyone on Earth. Beat the clock.">
+<meta name="twitter:image" content="https://hueman-game.vercel.app/api/og">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "VideoGame",
+      "@id": "https://hueman-game.vercel.app/#game",
+      "name": "HUEMAN",
+      "alternateName": ["Hueman Color Game", "The Daily Color Game"],
+      "url": "https://hueman-game.vercel.app/",
+      "description": "HUEMAN is a free daily color game — like Wordle for your eyes. One puzzle a day, the same for everyone on Earth: spot the tile with the odd shade before the timer runs out. Each level the color difference gets smaller, the grid gets bigger, and the clock gets shorter. Three lives, then share your score.",
+      "genre": ["Puzzle", "Casual", "Daily Game", "Color Perception"],
+      "playMode": "SinglePlayer",
+      "gamePlatform": "Web Browser",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any (browser-based, no download)",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "image": "https://hueman-game.vercel.app/api/og",
+      "publisher": { "@id": "https://puzzlepage.app/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://puzzlepage.app/#org",
+      "name": "Puzzle Page",
+      "url": "https://puzzlepage.app"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://hueman-game.vercel.app/#website",
+      "name": "HUEMAN — The Daily Color Game",
+      "url": "https://hueman-game.vercel.app/",
+      "publisher": { "@id": "https://puzzlepage.app/#org" }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://hueman-game.vercel.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is HUEMAN?",
+          "acceptedAnswer": { "@type": "Answer", "text": "HUEMAN is a free daily color game — like Wordle, but for your eyes. Every day there is one new puzzle, the same for everyone on Earth. You tap the tile with a slightly different shade before the timer runs out. Each level the difference gets smaller, the grid gets bigger, and the clock gets shorter. You have three lives, and your final level is your score." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you play HUEMAN?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Look at the grid of colored tiles and tap the one that is a slightly different shade — the odd one out — before the timer bar empties. A wrong tap or running out of time costs one of your three lives. When your lives are gone, your final level is your score, and you can share a Wordle-style emoji grid of your run with friends." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is HUEMAN a color blindness test?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. HUEMAN is a game, not a medical color vision test, and it cannot diagnose color blindness. Shade differences include brightness shifts, so it stays playable with most types of color vision deficiency. If you have concerns about your color vision, see an eye care professional." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is HUEMAN free to play?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. HUEMAN is completely free, plays in any web browser on phone or computer, and requires no download, app install, account, or signup." }
+        },
+        {
+          "@type": "Question",
+          "name": "When does the new HUEMAN puzzle come out?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A new puzzle goes live every day at midnight UTC, and it is identical for every player worldwide. You can enable browser alerts or download a daily calendar reminder from the bell icon in the game." }
+        },
+        {
+          "@type": "Question",
+          "name": "What are some games like HUEMAN?",
+          "acceptedAnswer": { "@type": "Answer", "text": "If you enjoy HUEMAN, you may also like other color and daily puzzle games such as Kuku Kube, I Love Hue, Colordle, Colorfle, and Hexcodle — and of course Wordle, which inspired the daily-puzzle format. You can find more daily games or create your own at puzzlepage.app." }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <style>
   :root{
     --ink:#0E0E12;
@@ -216,6 +301,28 @@
     padding:0 0 18px;font-size:.72rem;color:var(--muted);
     text-align:center;line-height:1.7;
   }
+
+  /* ---------- about / faq (below the fold) ---------- */
+  .about{
+    width:100%;max-width:520px;
+    padding:30px 22px 40px;
+    border-top:1px solid var(--line);
+    margin-top:18px;
+  }
+  .about h2{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:1.15rem;margin:0 0 10px;
+  }
+  .about h3{
+    font-size:.95rem;font-weight:700;margin:20px 0 6px;
+  }
+  .about p{
+    font-size:.85rem;line-height:1.65;color:var(--muted);
+    margin-bottom:10px;
+  }
+  .about p b{color:var(--text)}
+  .about a{color:var(--daily);text-decoration:none;font-weight:600}
+  .about a:hover{text-decoration:underline}
   footer a,.card a{color:var(--daily);text-decoration:none;font-weight:600}
   footer a:hover,.card a:hover{text-decoration:underline}
 </style>
@@ -223,7 +330,7 @@
 <body>
 
 <header>
-  <div class="wordmark" aria-label="Hueman"><span class="hue">HUE</span><span class="man">MAN</span></div>
+  <h1 class="wordmark" aria-label="Hueman"><span class="hue">HUE</span><span class="man">MAN</span></h1>
   <div class="hdr-btns">
     <button class="icon-btn" id="btnNotify" aria-label="Get notified about the daily puzzle">🔔</button>
     <button class="icon-btn" id="btnStats" aria-label="Statistics">▦</button>
@@ -246,6 +353,24 @@
   <p class="prompt" id="prompt">Tap the odd shade out</p>
   <div id="board" role="grid" aria-label="Color tiles"></div>
 </main>
+
+<section class="about" aria-label="About HUEMAN">
+  <h2>HUEMAN — the free daily color game</h2>
+  <p><b>HUEMAN</b> is a free daily color game — like Wordle, but for your eyes. Every day there's <b>one new puzzle, the same for everyone on Earth</b>. Tap the tile with the slightly different shade — the odd one out — before the timer runs out. Each level the color difference gets smaller, the grid gets bigger, and the clock gets shorter. Three lives, then your final level is your score.</p>
+  <p>It plays in any browser on your phone or computer: <b>no download, no app, no signup</b>. If you grew up on spot-the-difference games like Kuku Kube or I Love Hue, or you start your morning with daily puzzles like Wordle, Connections, Colordle, or Hexcodle, HUEMAN fits right into the rotation — and takes about two minutes.</p>
+
+  <h3>How do you play HUEMAN?</h3>
+  <p>Look at the grid of colored tiles and tap the one that's a slightly different shade before the timer bar empties. A wrong tap or running out of time costs one of your three lives. When your lives are gone, your final level is your score — share your Wordle-style emoji grid and see whose eyes are sharper.</p>
+
+  <h3>Is HUEMAN a color blindness test?</h3>
+  <p>No — HUEMAN is a game, not a medical color vision test, and it can't diagnose color blindness. Shade differences include brightness shifts, so it stays playable with most types of color vision deficiency. If you have concerns about your color vision, see an eye care professional.</p>
+
+  <h3>When does the new puzzle come out?</h3>
+  <p>A new puzzle goes live <b>every day at midnight UTC</b>, identical for every player worldwide. Tap the bell icon to enable browser alerts or grab a daily calendar reminder so you never miss a drop.</p>
+
+  <h3>Is HUEMAN free?</h3>
+  <p>Yes — completely free, forever, in your browser. HUEMAN is a <a href="https://puzzlepage.app" target="_blank" rel="noopener">Puzzle Page</a> game: discover more daily puzzle games, or build and publish your own, at <a href="https://puzzlepage.app" target="_blank" rel="noopener">puzzlepage.app</a>.</p>
+</section>
 
 <footer>
   One puzzle a day · Same for everyone on Earth<br>
@@ -296,7 +421,7 @@
       <div class="sp-head" id="spHead">HUEMAN #1</div>
       <div id="spGrid">🟦🟩🟨</div>
     </div>
-    <button class="btn daily-tint" id="btnShare">Share result</button>
+    <button class="btn daily-tint" id="btnShare">Challenge your friends</button>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
     <a class="btn ghost" href="https://puzzlepage.app" target="_blank" rel="noopener" style="color:var(--text)">More games on Puzzle Page →</a>
     <div class="countdown">Next puzzle in <b id="cd">00:00:00</b></div>
@@ -498,7 +623,7 @@ function shareGrid(){
   return out.trim();
 }
 function shareText(score){
-  return `HUEMAN #${DAY} 🎨\nLevel ${score} in ${fmtClock(totalMs)} · Top ${100-percentile(score)}%\n\n${shareGrid()}\n\n${SITE_URL}`;
+  return `HUEMAN #${DAY} 🎨\nLevel ${score} in ${fmtClock(totalMs)} · Top ${100-percentile(score)}%\n\n${shareGrid()}\n\nThink your eyes are sharper? ${SITE_URL}/?utm_source=share`;
 }
 
 function endGame(){
@@ -515,10 +640,14 @@ function endGame(){
   $("btnShare").style.display = practice ? "none" : "block";
   $("ovResult").hidden = false;
 
-  if(!practice) saveResult(finalScore);
+  if(!practice){
+    saveResult(finalScore);
+    try{ va('event',{name:'game_complete',data:{day:DAY,level:finalScore}}); }catch(e){}
+  }
   tickCountdown();
 
   $("btnShare").onclick = async ()=>{
+    try{ va('event',{name:'share',data:{day:DAY,level:finalScore}}); }catch(e){}
     const txt = shareText(finalScore);
     try{
       if(navigator.share){ await navigator.share({text:txt}); return; }

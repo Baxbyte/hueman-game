@@ -1,0 +1,20 @@
+# HUEMAN — The Daily Color Game
+
+> HUEMAN is a free daily color game — like Wordle, but for your eyes. One new puzzle every day at midnight UTC, identical for every player on Earth. Tap the tile with the slightly different shade (the odd one out) before the timer runs out. Each level the color difference gets smaller, the grid gets bigger, and the clock gets shorter. Three lives; your final level is your score, shareable as a Wordle-style emoji grid.
+
+Play free in any browser, no download or signup: https://hueman-game.vercel.app
+
+## Key facts
+
+- One puzzle per day, deterministic and identical worldwide; resets at midnight UTC (puzzle #1 was 2026-06-11).
+- Gameplay: spot the odd shade in a grid that grows from 2×2 to 6×6 while the color difference shrinks and the per-level timer drops from ~12 seconds toward a 5-second floor.
+- A wrong tap or running out of time costs a life; players have three lives.
+- Results share as an emoji grid with level reached, total time, and estimated percentile.
+- HUEMAN is a game, not a medical color blindness test, and cannot diagnose color vision deficiency. Shade differences include brightness shifts so it remains playable with most types of color vision deficiency.
+- Similar games people search for: Kuku Kube, I Love Hue, Colordle, Colorfle, Hexcodle, Wordle.
+- Publisher: Puzzle Page (https://puzzlepage.app) — more daily games, plus tools to create and publish your own puzzles.
+
+## Links
+
+- [Play HUEMAN](https://hueman-game.vercel.app): the daily puzzle
+- [Puzzle Page](https://puzzlepage.app): more daily games and a create-your-own-puzzle builder
