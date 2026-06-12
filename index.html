@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HUEMAN — The Daily Color Game</title>
-<meta name="description" content="One color puzzle a day. Same for everyone on Earth. Spot the odd shade and find out how good your eyes really are.">
+<meta name="description" content="One color puzzle a day. Same for everyone on Earth. Spot the odd shade before the clock runs out and find out how good your eyes really are. A Puzzle Page game.">
 <meta property="og:title" content="HUEMAN — How hueman are you?">
-<meta property="og:description" content="One color puzzle a day. Same for everyone on Earth. No words, no downloads, no excuses.">
+<meta property="og:description" content="One color puzzle a day. Same for everyone on Earth. Beat the clock. No words, no downloads, no excuses.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://hueman-game.vercel.app">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -70,6 +71,25 @@
   .lives{letter-spacing:3px;font-size:.95rem}
   .level-label b{color:var(--text);font-weight:700}
   .daynum{font-weight:600}
+
+  /* ---------- timer ---------- */
+  .timerwrap{
+    width:100%;max-width:520px;
+    display:flex;align-items:center;gap:10px;
+    padding:10px 22px 0;
+  }
+  .timerbar{flex:1;height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+  .timerbar i{
+    display:block;height:100%;width:100%;
+    background:var(--daily);border-radius:99px;
+    transition:background .3s;
+  }
+  .timenum{
+    font-size:.78rem;color:var(--muted);min-width:36px;text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .timerwrap.low .timerbar i{background:#E0524D}
+  .timerwrap.low .timenum{color:#E0524D;font-weight:700}
 
   /* ---------- board ---------- */
   main{
@@ -141,6 +161,7 @@
     padding:15px 18px;border-radius:999px;
     font-weight:700;font-size:1rem;text-align:center;
     background:var(--text);color:var(--ink);
+    text-decoration:none;
     transition:transform .12s ease,opacity .15s;
   }
   .btn:active{transform:scale(.98)}
@@ -154,7 +175,11 @@
     margin:4px 0 2px;
   }
   .result-pct{
-    font-size:1rem;font-weight:600;color:var(--daily);margin-bottom:16px;
+    font-size:1rem;font-weight:600;color:var(--daily);margin-bottom:4px;
+  }
+  .result-time{
+    font-size:.85rem;color:var(--muted);margin-bottom:16px;
+    font-variant-numeric:tabular-nums;
   }
   .share-preview{
     background:var(--surface-2);border:1px solid var(--line);
@@ -189,8 +214,10 @@
   .toast.show{opacity:1}
   footer{
     padding:0 0 18px;font-size:.72rem;color:var(--muted);
-    text-align:center;
+    text-align:center;line-height:1.7;
   }
+  footer a,.card a{color:var(--daily);text-decoration:none;font-weight:600}
+  footer a:hover,.card a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -198,6 +225,7 @@
 <header>
   <div class="wordmark" aria-label="Hueman"><span class="hue">HUE</span><span class="man">MAN</span></div>
   <div class="hdr-btns">
+    <button class="icon-btn" id="btnNotify" aria-label="Get notified about the daily puzzle">🔔</button>
     <button class="icon-btn" id="btnStats" aria-label="Statistics">▦</button>
     <button class="icon-btn" id="btnHelp" aria-label="How to play">?</button>
   </div>
@@ -209,12 +237,20 @@
   <span class="lives" id="lives" aria-label="Lives remaining">●●●</span>
 </div>
 
+<div class="timerwrap" id="timerWrap">
+  <div class="timerbar"><i id="timeFill"></i></div>
+  <span class="timenum" id="timeNum" aria-label="Seconds remaining"></span>
+</div>
+
 <main>
   <p class="prompt" id="prompt">Tap the odd shade out</p>
   <div id="board" role="grid" aria-label="Color tiles"></div>
 </main>
 
-<footer>One puzzle a day · Same for everyone on Earth</footer>
+<footer>
+  One puzzle a day · Same for everyone on Earth<br>
+  A <a href="https://puzzlepage.app" target="_blank" rel="noopener">Puzzle Page</a> game — play more &amp; create your own at <a href="https://puzzlepage.app" target="_blank" rel="noopener">puzzlepage.app</a>
+</footer>
 
 <!-- HOW TO PLAY -->
 <div class="overlay" id="ovHelp" hidden>
@@ -222,13 +258,14 @@
     <button class="close-x" data-close aria-label="Close">×</button>
     <h2>How to play</h2>
     <p class="sub">No words to guess. No downloads. Just your eyes.</p>
-    <p><b>1.</b> One tile is a slightly different shade. Tap it.</p>
-    <p><b>2.</b> Each level, the difference gets smaller and the grid gets bigger.</p>
-    <p><b>3.</b> You have three lives. Your final level is your score.</p>
+    <p><b>1.</b> One tile is a slightly different shade. Tap it before the timer bar empties.</p>
+    <p><b>2.</b> Each level, the difference gets smaller, the grid gets bigger — and the clock gets shorter.</p>
+    <p><b>3.</b> A wrong tap or running out of time costs a life. You have three. Your final level is your score.</p>
     <div class="demo-row" id="demoRow" aria-hidden="true"></div>
     <p>Everyone on Earth gets the <b>same puzzle</b> today. Compare scores, settle arguments.</p>
     <button class="btn daily-tint" data-close>Play today's puzzle</button>
     <p class="fine" style="margin-top:14px">Color vision varies from person to person — that's the whole point. Shade differences include brightness shifts, so the game stays playable with most types of color vision deficiency.</p>
+    <p class="fine" style="margin-top:10px">HUEMAN is part of <a href="https://puzzlepage.app" target="_blank" rel="noopener">Puzzle Page</a> — discover more daily games or build your own at puzzlepage.app.</p>
   </div>
 </div>
 
@@ -254,13 +291,27 @@
     <h2 id="resTitle">Out of lives!</h2>
     <div class="result-big" id="resLevel">Level 12</div>
     <div class="result-pct" id="resPct">Sharper than ~84% of players</div>
+    <div class="result-time" id="resTime">⏱ 1:34 on the clock</div>
     <div class="share-preview">
       <div class="sp-head" id="spHead">HUEMAN #1</div>
       <div id="spGrid">🟦🟩🟨</div>
     </div>
     <button class="btn daily-tint" id="btnShare">Share result</button>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
+    <a class="btn ghost" href="https://puzzlepage.app" target="_blank" rel="noopener" style="color:var(--text)">More games on Puzzle Page →</a>
     <div class="countdown">Next puzzle in <b id="cd">00:00:00</b></div>
+  </div>
+</div>
+
+<!-- GET NOTIFIED -->
+<div class="overlay" id="ovNotify" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>Never miss a drop</h2>
+    <p class="sub">A new puzzle goes live every day at midnight UTC. Pick how you want the nudge:</p>
+    <button class="btn daily-tint" id="btnPush">🔔 Browser alerts on this device</button>
+    <button class="btn ghost" id="btnCal">📅 Daily calendar reminder (.ics)</button>
+    <p class="fine" style="margin-top:14px">The calendar reminder syncs everywhere your calendar does — phone, computer, and email via Google, Apple, or Outlook. For email alerts and more daily games, head to <a href="https://puzzlepage.app" target="_blank" rel="noopener">puzzlepage.app</a>.</p>
   </div>
 </div>
 
@@ -269,6 +320,9 @@
 <script>
 (function(){
 "use strict";
+
+const SITE_URL = "https://hueman-game.vercel.app";
+const PP_URL   = "https://puzzlepage.app";
 
 /* ============ safe storage (works deployed; degrades in sandboxed previews) ============ */
 const store = {
@@ -336,13 +390,48 @@ function hueEmoji(h){
 /* ============ state ============ */
 let rng, level, lives, locked, practice=false;
 let history = [];   // {h, missed}
+let cur = null;     // current level: {c, oddIdx}
 const $ = id => document.getElementById(id);
 const board=$("board"), root=document.documentElement;
+
+/* ============ timer ============ */
+let timerId=null, timeLeft=0, timeCap=1, totalMs=0;
+function levelTime(lv){ return Math.max(5, 12 - lv*0.4); }   // seconds; floor keeps late levels survivable
+function overlayOpen(){
+  return !$("ovHelp").hidden || !$("ovStats").hidden || !$("ovNotify").hidden;
+}
+function stopTimer(){ clearInterval(timerId); timerId=null; }
+function drawTimer(){
+  $("timeFill").style.width = Math.max(0, timeLeft/timeCap*100)+"%";
+  $("timeNum").textContent = (Math.max(0,timeLeft)/1000).toFixed(1);
+  $("timerWrap").classList.toggle("low", timeLeft/timeCap < .28);
+}
+function startTimer(){
+  stopTimer();
+  timeCap = levelTime(level)*1000;
+  timeLeft = timeCap;
+  drawTimer();
+  let last = performance.now();
+  timerId = setInterval(()=>{
+    const t = performance.now();
+    if(!locked && !overlayOpen()){
+      timeLeft -= t-last;
+      totalMs  += t-last;
+    }
+    last = t;
+    drawTimer();
+    if(timeLeft<=0){ stopTimer(); loseLife(); }
+  }, 50);
+}
+function fmtClock(ms){
+  const s = Math.max(0, Math.round(ms/1000));
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
 
 function freshGame(isPractice){
   practice = !!isPractice;
   rng = practice ? mulberry32(Date.now()&0xffffffff) : mulberry32(DAY*7919+13);
-  level=1; lives=3; locked=false; history=[];
+  level=1; lives=3; locked=false; history=[]; totalMs=0;
   $("prompt").textContent = practice ? "Practice — tap the odd shade out" : "Tap the odd shade out";
   renderLevel();
 }
@@ -351,6 +440,7 @@ function renderLevel(){
   const n = gridSize(level);
   const c = levelColors(rng, level);
   const oddIdx = Math.floor(rng()*n*n);
+  cur = {c, oddIdx};
   if(!practice && level===1) root.style.setProperty("--daily", `hsl(${c.h} 70% 55%)`);
   $("levelNum").textContent = level;
   $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
@@ -361,32 +451,41 @@ function renderLevel(){
     const t = document.createElement("button");
     t.className="tile";
     t.style.background = i===oddIdx ? c.odd : c.base;
-    t.setAttribute("aria-label", i===oddIdx ? "tile" : "tile");
-    t.addEventListener("click", ()=>pick(i===oddIdx, t, oddIdx, c));
+    t.setAttribute("aria-label", "tile");
+    t.addEventListener("click", ()=>pick(i===oddIdx, t));
     board.appendChild(t);
   }
+  startTimer();
 }
 
-function pick(hit, tileEl, oddIdx, c){
+function pick(hit, tileEl){
   if(locked) return;
   if(hit){
     locked=true;
+    stopTimer();
     tileEl.classList.add("correct");
-    history.push({h:c.h, missed:false});
+    history.push({h:cur.c.h, missed:false});
     setTimeout(()=>{ level++; locked=false; renderLevel(); }, 280);
   }else{
-    locked=true;
-    lives--;
-    history.push({h:c.h, missed:true});
-    board.classList.add("board-shake");
-    const odd = board.children[oddIdx];
-    if(odd) odd.classList.add("reveal");
-    $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
-    setTimeout(()=>{
-      if(lives<=0){ endGame(); }
-      else { locked=false; renderLevel(); }
-    }, 850);
+    loseLife();
   }
+}
+
+/* wrong tap or out of time — same cost */
+function loseLife(){
+  if(locked) return;
+  locked=true;
+  stopTimer();
+  lives--;
+  history.push({h:cur.c.h, missed:true});
+  board.classList.add("board-shake");
+  const odd = board.children[cur.oddIdx];
+  if(odd) odd.classList.add("reveal");
+  $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
+  setTimeout(()=>{
+    if(lives<=0){ endGame(); }
+    else { locked=false; renderLevel(); }
+  }, 850);
 }
 
 /* ============ end + share ============ */
@@ -399,17 +498,19 @@ function shareGrid(){
   return out.trim();
 }
 function shareText(score){
-  return `HUEMAN #${DAY} 🎨\nLevel ${score} · Top ${100-percentile(score)}%\n\n${shareGrid()}`;
+  return `HUEMAN #${DAY} 🎨\nLevel ${score} in ${fmtClock(totalMs)} · Top ${100-percentile(score)}%\n\n${shareGrid()}\n\n${SITE_URL}`;
 }
 
 function endGame(){
+  stopTimer();
   const finalScore = Math.max(1, level-1);   // last level completed (floor of 1)
   const pct = percentile(finalScore);
 
   $("resTitle").textContent = practice ? "Practice over" : (pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Out of lives!");
   $("resLevel").textContent = "Level "+finalScore;
   $("resPct").textContent = practice ? "Practice rounds aren't ranked" : `Sharper than ~${pct}% of players (est.)`;
-  $("spHead").textContent = `HUEMAN #${DAY} · Level ${finalScore} · Top ${100-pct}%`;
+  $("resTime").textContent = `⏱ ${fmtClock(totalMs)} on the clock`;
+  $("spHead").textContent = `HUEMAN #${DAY} · Level ${finalScore} · ${fmtClock(totalMs)} · Top ${100-pct}%`;
   $("spGrid").textContent = shareGrid();
   $("btnShare").style.display = practice ? "none" : "block";
   $("ovResult").hidden = false;
@@ -472,6 +573,70 @@ function openStats(){
 }
 $("btnHelp").onclick = ()=> $("ovHelp").hidden=false;
 $("btnStats").onclick = openStats;
+$("btnNotify").onclick = ()=> $("ovNotify").hidden=false;
+
+/* ============ get notified ============ */
+$("btnPush").onclick = async ()=>{
+  if(!("Notification" in window)){ toast("Notifications aren't supported here"); return; }
+  try{
+    const p = await Notification.requestPermission();
+    if(p==="granted"){
+      store.set("hm_notify","1");
+      toast("Alerts on for this device");
+      try{ new Notification("HUEMAN 🎨",{body:"You're set — you'll get a ping when the next puzzle drops."}); }catch(e){}
+    }else{
+      toast("Notifications are blocked in browser settings");
+    }
+  }catch(e){ toast("Couldn't enable notifications"); }
+};
+
+$("btnCal").onclick = ()=>{
+  const pad = x => String(x).padStart(2,"0");
+  const n = new Date();
+  // first reminder: next 9:00 AM local, then daily
+  const start = new Date(n.getFullYear(), n.getMonth(), n.getDate()+(n.getHours()>=9?1:0), 9, 0, 0);
+  const dtstart = `${start.getFullYear()}${pad(start.getMonth()+1)}${pad(start.getDate())}T090000`;
+  const stamp = n.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+  const ics = [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//PuzzlePage//HUEMAN//EN",
+    "BEGIN:VEVENT",
+    "UID:hueman-daily-"+Date.now()+"@hueman-game.vercel.app",
+    "DTSTAMP:"+stamp,
+    "DTSTART:"+dtstart,
+    "RRULE:FREQ=DAILY",
+    "SUMMARY:🎨 HUEMAN — today's color puzzle is live",
+    "DESCRIPTION:Play today's puzzle: "+SITE_URL+"\\nMore daily games: "+PP_URL,
+    "URL:"+SITE_URL,
+    "BEGIN:VALARM","TRIGGER:PT0S","ACTION:DISPLAY","DESCRIPTION:HUEMAN time","END:VALARM",
+    "END:VEVENT","END:VCALENDAR"
+  ].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+  a.download = "hueman-daily.ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  toast("Reminder downloaded — open it to add to your calendar");
+};
+
+/* ============ midnight rollover: new puzzle watcher ============ */
+let rolled=false;
+setInterval(()=>{
+  if(rolled) return;
+  const n = new Date();
+  const d = Math.floor((Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate())-EPOCH_UTC)/86400000)+1;
+  if(d > DAY){
+    rolled = true;
+    if(store.get("hm_notify")==="1" && "Notification" in window && Notification.permission==="granted"){
+      try{ new Notification(`HUEMAN #${d} just dropped 🎨`,{body:"Today's color puzzle is live. Can you beat yesterday?"}); }catch(e){}
+    }
+    if(!$("ovResult").hidden){
+      toast("New puzzle is live — loading it now…");
+      setTimeout(()=>location.reload(), 1400);
+    }else{
+      toast("A new puzzle just dropped — refresh when you're ready");
+    }
+  }
+}, 30000);
 document.querySelectorAll("[data-close]").forEach(b=>{
   b.onclick = ()=> b.closest(".overlay").hidden=true;
 });
