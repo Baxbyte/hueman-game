@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HUEMAN">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>HUEMAN — Free Daily Color Game | Spot the Odd Shade</title>
 <meta name="description" content="A free daily color game — like Wordle for your eyes. Spot the odd shade before time runs out, challenge your color vision, and share your score. New puzzle every day. No download, no signup.">
 <link rel="canonical" href="https://huemangame.com/">
@@ -114,6 +118,7 @@
     --radius:16px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none!important}
   html,body{height:100%}
   body{
     background:var(--ink);
@@ -122,6 +127,7 @@
     display:flex;flex-direction:column;align-items:center;
     min-height:100dvh;
     overflow-x:hidden;
+    touch-action:manipulation;
   }
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
@@ -293,6 +299,71 @@
     font-variant-numeric:tabular-nums;
   }
   .countdown b{color:var(--text)}
+
+  /* ---------- start screen ---------- */
+  .start-card{text-align:center}
+  .start-logo{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:2.5rem;line-height:1;margin:8px 0 4px;
+  }
+  .start-logo .hue{color:var(--daily);transition:color .6s ease}
+  .start-day{
+    color:var(--muted);font-size:.8rem;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;
+  }
+  .start-tag{font-size:1rem;line-height:1.55;margin-bottom:4px}
+  .start-rules{
+    list-style:none;text-align:left;margin:16px 0 14px;
+    display:flex;flex-direction:column;gap:9px;font-size:.9rem;line-height:1.4;
+  }
+  .start-globe{font-size:.85rem;color:var(--muted);margin-bottom:14px}
+  .start-streak{
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:12px;padding:11px 12px;font-size:.88rem;margin:0 0 14px;
+  }
+  .start-links{
+    display:flex;justify-content:center;align-items:center;gap:10px;
+    margin-top:16px;font-size:.85rem;color:var(--muted);
+  }
+  .start-links button{color:var(--muted);font-size:.85rem;font-weight:600;padding:4px}
+  .start-links button:hover{color:var(--text);text-decoration:underline}
+  .start-links button:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
+
+  /* ---------- social share row ---------- */
+  .share-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+  .net-btn{
+    flex:1 1 calc(33.33% - 6px);min-width:90px;
+    padding:11px 6px;border-radius:12px;
+    font-size:.8rem;font-weight:700;color:#fff;text-align:center;
+    transition:transform .12s ease,opacity .15s;
+  }
+  .net-btn:active{transform:scale(.96)}
+  .net-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+  .net-x{background:#000;border:1px solid var(--line)}
+  .net-wa{background:#1FAF54}
+  .net-fb{background:#1877F2}
+  .net-tg{background:#2AABEE}
+  .net-sms{background:var(--surface-2);border:1px solid var(--line);color:var(--text)}
+  .net-copy{background:var(--surface-2);border:1px solid var(--line);color:var(--text)}
+
+  /* ---------- streak history ---------- */
+  .hist{
+    margin:4px 0 16px;max-height:212px;overflow-y:auto;
+    border:1px solid var(--line);border-radius:14px;
+    background:var(--surface-2);
+  }
+  .hist-row{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 14px;border-bottom:1px solid var(--line);font-size:.82rem;
+  }
+  .hist-row:last-child{border-bottom:none}
+  .hist-day{color:var(--muted);font-weight:600;min-width:44px;font-variant-numeric:tabular-nums}
+  .hist-grid{
+    flex:1;font-size:.88rem;letter-spacing:1px;
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  }
+  .hist-lv{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hist-empty{padding:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
   .toast{
     position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
     background:var(--text);color:var(--ink);
@@ -372,6 +443,9 @@
   <h3>When does the new puzzle come out?</h3>
   <p>A new puzzle goes live <b>every day at midnight UTC</b>, identical for every player worldwide. Tap the bell icon to enable browser alerts or grab a daily calendar reminder so you never miss a drop.</p>
 
+  <h3>How are my streaks and stats saved?</h3>
+  <p>Your streak, best level, and day-by-day history are stored <b>locally in your browser on this device</b> — no account, no signup. That means clearing site data, playing in private/incognito mode, or switching to a different device or browser starts your record fresh, so play on the same device to keep your streak alive.</p>
+
   <h3>Is HUEMAN free?</h3>
   <p>Yes — completely free, forever, in your browser. HUEMAN is a <a href="https://puzzlepage.app" target="_blank" rel="noopener">Puzzle Page</a> game: discover more daily puzzle games, or build and publish your own, at <a href="https://puzzlepage.app" target="_blank" rel="noopener">puzzlepage.app</a>.</p>
 </section>
@@ -380,6 +454,30 @@
   One puzzle a day · Same for everyone on Earth<br>
   A <a href="https://puzzlepage.app" target="_blank" rel="noopener">Puzzle Page</a> game — play more &amp; create your own at <a href="https://puzzlepage.app" target="_blank" rel="noopener">puzzlepage.app</a>
 </footer>
+
+<!-- START SCREEN (visible on load — game begins only when the player hits Start) -->
+<div class="overlay" id="ovStart">
+  <div class="card start-card">
+    <div class="start-logo"><span class="hue">HUE</span><span class="man">MAN</span></div>
+    <div class="start-day" id="startDay">The daily color game</div>
+    <p class="start-tag" id="startTag">One tile is hiding in plain sight.<br>Find it. Beat the clock. Outsee everyone.</p>
+    <div class="demo-row" id="startDemo" aria-hidden="true"></div>
+    <ul class="start-rules">
+      <li>🎯 Tap the tile with the odd shade — before the timer empties</li>
+      <li>📈 Every level: smaller difference, bigger grid, shorter clock</li>
+      <li>❤️ Three lives. Your final level is your score</li>
+    </ul>
+    <p class="start-globe">🌍 Everyone on Earth gets this exact puzzle today. Same tiles, same clock. No excuses.</p>
+    <div class="start-streak" id="startStreak" hidden></div>
+    <button class="btn daily-tint" id="btnStart">Start today's puzzle</button>
+    <button class="btn ghost" id="btnStartPractice" hidden>Practice round (unranked)</button>
+    <div class="start-links">
+      <button id="btnStartHelp">How to play</button>
+      <span aria-hidden="true">·</span>
+      <button id="btnStartStats">My stats &amp; streaks</button>
+    </div>
+  </div>
+</div>
 
 <!-- HOW TO PLAY -->
 <div class="overlay" id="ovHelp" hidden>
@@ -403,20 +501,26 @@
   <div class="card">
     <button class="close-x" data-close aria-label="Close">×</button>
     <h2>Statistics</h2>
-    <p class="sub">Saved on this device.</p>
+    <p class="sub" id="statsSub">Your record so far.</p>
     <div class="statgrid">
       <div class="stat"><b id="stPlayed">0</b><span>Played</span></div>
       <div class="stat"><b id="stBest">–</b><span>Best level</span></div>
-      <div class="stat"><b id="stStreak">0</b><span>Streak</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>Streak 🔥</span></div>
       <div class="stat"><b id="stMax">0</b><span>Max streak</span></div>
     </div>
+    <h2 style="font-size:1.05rem;margin-top:4px">History</h2>
+    <p class="sub" style="margin-bottom:10px">Every day you've played, newest first.</p>
+    <div class="hist" id="histList"></div>
+    <button class="btn daily-tint" id="btnCard">🎨 Share my player card</button>
     <button class="btn ghost" data-close>Back</button>
+    <p class="fine" style="margin-top:14px">Your stats, streak and history are saved in this browser on this device — no account needed. Clearing site data, private browsing, or switching devices starts you fresh.</p>
   </div>
 </div>
 
 <!-- RESULTS -->
 <div class="overlay" id="ovResult" hidden>
   <div class="card">
+    <button class="close-x" id="btnResClose" aria-label="Close">×</button>
     <h2 id="resTitle">Out of lives!</h2>
     <div class="result-big" id="resLevel">Level 12</div>
     <div class="result-pct" id="resPct">Sharper than ~84% of players</div>
@@ -426,6 +530,14 @@
       <div id="spGrid">🟦🟩🟨</div>
     </div>
     <button class="btn daily-tint" id="btnShare">Challenge your friends</button>
+    <div class="share-row" aria-label="Share your score on">
+      <button class="net-btn net-x" data-net="x" aria-label="Share on X">𝕏 Post</button>
+      <button class="net-btn net-wa" data-net="whatsapp" aria-label="Share on WhatsApp">WhatsApp</button>
+      <button class="net-btn net-fb" data-net="facebook" aria-label="Share on Facebook">Facebook</button>
+      <button class="net-btn net-tg" data-net="telegram" aria-label="Share on Telegram">Telegram</button>
+      <button class="net-btn net-sms" data-net="sms" aria-label="Share by text message">💬 Text</button>
+      <button class="net-btn net-copy" data-net="copy" aria-label="Copy score to clipboard">🔗 Copy</button>
+    </div>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
     <a class="btn ghost" href="https://puzzlepage.app" target="_blank" rel="noopener" style="color:var(--text)">More games on Puzzle Page →</a>
     <div class="countdown">Next puzzle in <b id="cd">00:00:00</b></div>
@@ -517,17 +629,32 @@ function hueEmoji(h){
 }
 
 /* ============ state ============ */
-let rng, level, lives, locked, practice=false;
+let rng, level, lives, locked, practice=false, gameActive=false;
 let history = [];   // {h, missed}
 let cur = null;     // current level: {c, oddIdx}
 const $ = id => document.getElementById(id);
 const board=$("board"), root=document.documentElement;
 
+/* set today's brand hue immediately (same seed as level 1) so the start
+   screen, wordmark and buttons are tinted before the game begins */
+(function(){
+  const previewRng = mulberry32(DAY*7919+13);
+  const c = levelColors(previewRng, 1);
+  root.style.setProperty("--daily", `hsl(${c.h} 70% 55%)`);
+})();
+
+/* ============ per-day result history (this browser, this device) ============ */
+function loadHist(){
+  try{ return JSON.parse(store.get("hm_hist")||"{}") || {}; }catch(e){ return {}; }
+}
+function saveHist(h){ store.set("hm_hist", JSON.stringify(h)); }
+function playedToday(){ return !!loadHist()[DAY]; }
+
 /* ============ timer ============ */
 let timerId=null, timeLeft=0, timeCap=1, totalMs=0;
 function levelTime(lv){ return Math.max(5, 12 - lv*0.4); }   // seconds; floor keeps late levels survivable
 function overlayOpen(){
-  return !$("ovHelp").hidden || !$("ovStats").hidden || !$("ovNotify").hidden;
+  return !$("ovStart").hidden || !$("ovHelp").hidden || !$("ovStats").hidden || !$("ovNotify").hidden;
 }
 function stopTimer(){ clearInterval(timerId); timerId=null; }
 function drawTimer(){
@@ -559,6 +686,7 @@ function fmtClock(ms){
 
 function freshGame(isPractice){
   practice = !!isPractice;
+  gameActive = true;
   rng = practice ? mulberry32(Date.now()&0xffffffff) : mulberry32(DAY*7919+13);
   level=1; lives=3; locked=false; history=[]; totalMs=0;
   $("prompt").textContent = practice ? "Practice — tap the odd shade out" : "Tap the odd shade out";
@@ -626,45 +754,95 @@ function shareGrid(){
   }
   return out.trim();
 }
-function shareText(score){
-  return `HUEMAN #${DAY} 🎨\nLevel ${score} in ${fmtClock(totalMs)} · Top ${100-percentile(score)}%\n\n${shareGrid()}\n\nThink your eyes are sharper? ${SITE_URL}/?utm_source=share`;
+function shareText(score, ms, grid){
+  return `HUEMAN #${DAY} 🎨\nLevel ${score} in ${fmtClock(ms)} · Top ${100-percentile(score)}%\n\n${grid}\n\nThink your eyes are sharper? ${SITE_URL}/?utm_source=share`;
+}
+
+/* wire the big share button (native sheet on mobile) + per-platform buttons */
+function wireShareButtons(txt){
+  const enc = encodeURIComponent(txt);
+  // telegram passes url separately, so drop the trailing link line from its text
+  const encNoUrl = encodeURIComponent(txt.replace(/\n+Think your eyes[^]*$/,"").trim());
+  const shareUrl = encodeURIComponent(SITE_URL+"/?utm_source=share");
+  const links = {
+    x:        "https://twitter.com/intent/tweet?text="+enc,
+    whatsapp: "https://wa.me/?text="+enc,
+    facebook: "https://www.facebook.com/sharer/sharer.php?u="+shareUrl+"&quote="+enc,
+    telegram: "https://t.me/share/url?url="+shareUrl+"&text="+encNoUrl,
+    sms:      "sms:?&body="+enc
+  };
+  $("btnShare").onclick = async ()=>{
+    try{ va('event',{name:'share',data:{day:DAY,net:'native'}}); }catch(e){}
+    if(navigator.share){
+      try{ await navigator.share({text:txt}); return; }
+      catch(e){ if(e && e.name==="AbortError") return; }
+    }
+    try{ await navigator.clipboard.writeText(txt); toast("Copied — paste it anywhere"); }
+    catch(e){ toast("Couldn't copy — long-press the grid"); }
+  };
+  document.querySelectorAll(".net-btn").forEach(b=>{
+    const net = b.dataset.net;
+    b.onclick = async ()=>{
+      try{ va('event',{name:'share',data:{day:DAY,net}}); }catch(e){}
+      if(net==="copy"){
+        try{ await navigator.clipboard.writeText(txt); toast("Copied to clipboard"); }
+        catch(e){ toast("Couldn't copy — long-press the grid"); }
+        return;
+      }
+      if(net==="sms"){ location.href = links.sms; return; }
+      window.open(links[net], "_blank", "noopener");
+    };
+  });
 }
 
 function endGame(){
   stopTimer();
+  gameActive = false;
   const finalScore = Math.max(1, level-1);   // last level completed (floor of 1)
   const pct = percentile(finalScore);
+  const grid = shareGrid();
 
   $("resTitle").textContent = practice ? "Practice over" : (pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Out of lives!");
   $("resLevel").textContent = "Level "+finalScore;
   $("resPct").textContent = practice ? "Practice rounds aren't ranked" : `Sharper than ~${pct}% of players (est.)`;
   $("resTime").textContent = `⏱ ${fmtClock(totalMs)} on the clock`;
   $("spHead").textContent = `HUEMAN #${DAY} · Level ${finalScore} · ${fmtClock(totalMs)} · Top ${100-pct}%`;
-  $("spGrid").textContent = shareGrid();
-  $("btnShare").style.display = practice ? "none" : "block";
+  $("spGrid").textContent = grid;
+  const showShare = practice ? "none" : "";
+  $("btnShare").style.display = showShare;
+  document.querySelector(".share-row").style.display = showShare;
   $("ovResult").hidden = false;
 
   if(!practice){
-    saveResult(finalScore);
+    saveResult(finalScore, grid);
+    syncStartCard();
+    wireShareButtons(shareText(finalScore, totalMs, grid));
     try{ va('event',{name:'game_complete',data:{day:DAY,level:finalScore}}); }catch(e){}
   }
   tickCountdown();
-
-  $("btnShare").onclick = async ()=>{
-    try{ va('event',{name:'share',data:{day:DAY,level:finalScore}}); }catch(e){}
-    const txt = shareText(finalScore);
-    try{
-      if(navigator.share){ await navigator.share({text:txt}); return; }
-      throw 0;
-    }catch(e){
-      try{ await navigator.clipboard.writeText(txt); toast("Copied to clipboard"); }
-      catch(e2){ toast("Couldn't copy — long-press the grid"); }
-    }
-  };
   $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
 }
 
-function saveResult(score){
+/* re-open the result screen from a saved day (already played) */
+function showSavedResult(){
+  const e = loadHist()[DAY];
+  if(!e) return;
+  const pct = e.p;
+  $("resTitle").textContent = pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Today's result";
+  $("resLevel").textContent = "Level "+e.l;
+  $("resPct").textContent = `Sharper than ~${pct}% of players (est.)`;
+  $("resTime").textContent = `⏱ ${fmtClock(e.t)} on the clock`;
+  $("spHead").textContent = `HUEMAN #${DAY} · Level ${e.l} · ${fmtClock(e.t)} · Top ${100-pct}%`;
+  $("spGrid").textContent = e.g;
+  $("btnShare").style.display = "";
+  document.querySelector(".share-row").style.display = "";
+  wireShareButtons(shareText(e.l, e.t, e.g));
+  $("ovResult").hidden = false;
+  tickCountdown();
+  $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
+}
+
+function saveResult(score, grid){
   const last = store.get("hm_lastDay");
   if(last === String(DAY)) return;             // already counted today
   const played = (+store.get("hm_played")||0)+1;
@@ -675,6 +853,9 @@ function saveResult(score){
   store.set("hm_played",played); store.set("hm_best",best);
   store.set("hm_streak",streak); store.set("hm_max",maxStreak);
   store.set("hm_lastDay",String(DAY));
+  const hist = loadHist();
+  hist[DAY] = { l:score, t:Math.round(totalMs), p:percentile(score), g:grid };
+  saveHist(hist);
 }
 
 /* ============ countdown ============ */
@@ -697,13 +878,112 @@ function toast(msg){
   const t=$("toast"); t.textContent=msg; t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"),1800);
 }
+function renderHistory(){
+  const hist = loadHist();
+  const days = Object.keys(hist).map(Number).sort((a,b)=>b-a);
+  const el = $("histList");
+  if(!days.length){
+    el.innerHTML = '<div class="hist-empty">No games yet — play today\'s puzzle to start your history and your streak.</div>';
+    return;
+  }
+  el.innerHTML = days.map(d=>{
+    const e = hist[d];
+    return `<div class="hist-row">
+      <span class="hist-day">#${d}</span>
+      <span class="hist-grid">${e.g.replace(/\n/g,"")}</span>
+      <span class="hist-lv">Lv ${e.l} · Top ${100-e.p}%</span>
+    </div>`;
+  }).join("");
+}
 function openStats(){
   $("stPlayed").textContent = +store.get("hm_played")||0;
   $("stBest").textContent   = +store.get("hm_best")||"–";
   $("stStreak").textContent = +store.get("hm_streak")||0;
   $("stMax").textContent    = +store.get("hm_max")||0;
+  renderHistory();
   $("ovStats").hidden=false;
 }
+
+/* ============ player card (canvas → share/download) ============ */
+function cardRoundRect(x,px,py,w,h,r){
+  x.beginPath();
+  if(x.roundRect){ x.roundRect(px,py,w,h,r); }
+  else{ x.rect(px,py,w,h); }
+}
+async function sharePlayerCard(){
+  try{ va('event',{name:'player_card',data:{day:DAY}}); }catch(e){}
+  const played=+store.get("hm_played")||0, best=+store.get("hm_best")||0,
+        streak=+store.get("hm_streak")||0, maxS=+store.get("hm_max")||0;
+  const accent = (getComputedStyle(root).getPropertyValue("--daily")||"#4FA8D8").trim();
+  try{ await document.fonts.load("800 110px 'Bricolage Grotesque'"); }catch(e){}
+  const W=1080, H=1080;
+  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+
+  x.fillStyle="#0E0E12"; x.fillRect(0,0,W,H);
+  x.strokeStyle=accent; x.lineWidth=6;
+  cardRoundRect(x,30,30,W-60,H-60,44); x.stroke();
+
+  // wordmark
+  x.textBaseline="alphabetic";
+  x.font="800 116px 'Bricolage Grotesque',sans-serif";
+  const hueW=x.measureText("HUE").width, manW=x.measureText("MAN").width;
+  const wx=(W-hueW-manW)/2;
+  x.textAlign="left";
+  x.fillStyle=accent;    x.fillText("HUE", wx, 190);
+  x.fillStyle="#F4F2EC"; x.fillText("MAN", wx+hueW, 190);
+  x.textAlign="center";
+  x.fillStyle="#8C8C98"; x.font="600 30px Inter,sans-serif";
+  x.fillText("P L A Y E R   C A R D   ·   D A Y  #"+DAY, W/2, 250);
+
+  // hero number: best level
+  x.fillStyle="#F4F2EC"; x.font="800 250px 'Bricolage Grotesque',sans-serif";
+  x.fillText(best ? String(best) : "?", W/2, 540);
+  x.fillStyle=accent; x.font="700 34px Inter,sans-serif";
+  x.fillText("BEST LEVEL", W/2, 596);
+
+  // stat boxes
+  const boxes=[[String(played),"PLAYED"],[streak+" 🔥","STREAK"],[String(maxS),"MAX STREAK"]];
+  const bw=300, bh=160, gap=30, bx0=(W-(bw*3+gap*2))/2, by=650;
+  boxes.forEach(([num,label],i)=>{
+    const bx=bx0+i*(bw+gap);
+    x.fillStyle="#1F1F27"; cardRoundRect(x,bx,by,bw,bh,24); x.fill();
+    x.strokeStyle="#2A2A33"; x.lineWidth=2; cardRoundRect(x,bx,by,bw,bh,24); x.stroke();
+    x.fillStyle="#F4F2EC"; x.font="800 64px 'Bricolage Grotesque',sans-serif";
+    x.fillText(num, bx+bw/2, by+88);
+    x.fillStyle="#8C8C98"; x.font="600 22px Inter,sans-serif";
+    x.fillText(label, bx+bw/2, by+130);
+  });
+
+  // today's emoji run (if played)
+  const today=loadHist()[DAY];
+  if(today){
+    x.font="44px sans-serif";
+    const lines=today.g.split("\n").slice(0,2);
+    lines.forEach((ln,i)=> x.fillText(ln, W/2, 900+i*56));
+  }else{
+    x.fillStyle="#8C8C98"; x.font="600 30px Inter,sans-serif";
+    x.fillText("Today's puzzle is waiting…", W/2, 910);
+  }
+
+  x.fillStyle="#8C8C98"; x.font="600 30px Inter,sans-serif";
+  x.fillText("How hueman are you?  ·  huemangame.com", W/2, H-78);
+
+  c.toBlob(async blob=>{
+    if(!blob){ toast("Couldn't create your card"); return; }
+    const file = new File([blob], `hueman-player-card-day-${DAY}.png`, {type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], text:`My HUEMAN player card 🎨 Think your eyes are sharper? ${SITE_URL}/?utm_source=card`}); return; }
+      catch(e){ if(e && e.name==="AbortError") return; }
+    }
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast("Card saved — post it anywhere");
+  }, "image/png");
+}
+$("btnCard").onclick = sharePlayerCard;
 $("btnHelp").onclick = ()=> $("ovHelp").hidden=false;
 $("btnStats").onclick = openStats;
 $("btnNotify").onclick = ()=> $("ovNotify").hidden=false;
@@ -775,20 +1055,54 @@ document.querySelectorAll("[data-close]").forEach(b=>{
 });
 $("dayNum").textContent = "#"+DAY;
 
-/* demo tiles in help modal: 4 same + 1 obviously odd */
-(function(){
-  const row=$("demoRow");
+/* demo tiles (help modal + start screen): 4 same + 1 obviously odd */
+function fillDemo(id){
+  const row=$(id);
   for(let i=0;i<5;i++){
     const s=document.createElement("span");
     s.style.background = i===3 ? "hsl(200 70% 62%)" : "hsl(200 70% 50%)";
     row.appendChild(s);
   }
-})();
+}
+fillDemo("demoRow"); fillDemo("startDemo");
 
-/* first visit → show help */
-if(!store.get("hm_seen")){ $("ovHelp").hidden=false; store.set("hm_seen","1"); }
+/* ============ start screen ============ */
+function syncStartCard(){
+  $("startDay").textContent = "Daily puzzle #"+DAY;
+  const streak=+store.get("hm_streak")||0, last=+store.get("hm_lastDay")||0;
+  const sEl=$("startStreak");
+  if(streak>0 && last>=DAY-1){
+    sEl.hidden=false;
+    sEl.innerHTML = last===+DAY
+      ? `🔥 <b>${streak}-day streak</b> — come back tomorrow to keep it alive`
+      : `🔥 Your <b>${streak}-day streak</b> is on the line today. No pressure.`;
+  }else{
+    sEl.hidden=true;
+  }
+  if(playedToday()){
+    $("startTag").innerHTML = "You've already solved today's puzzle.<br>The next one drops at midnight UTC.";
+    $("btnStart").textContent = "See today's result";
+    $("btnStartPractice").hidden = false;
+  }else{
+    $("startTag").innerHTML = "One tile is hiding in plain sight.<br>Find it. Beat the clock. Outsee everyone.";
+    $("btnStart").textContent = "Start today's puzzle";
+    $("btnStartPractice").hidden = true;
+  }
+}
+$("btnStart").onclick = ()=>{
+  $("ovStart").hidden = true;
+  if(playedToday()) showSavedResult();
+  else freshGame(false);
+};
+$("btnStartPractice").onclick = ()=>{ $("ovStart").hidden=true; freshGame(true); };
+$("btnStartHelp").onclick = ()=> $("ovHelp").hidden=false;
+$("btnStartStats").onclick = openStats;
+$("btnResClose").onclick = ()=>{
+  $("ovResult").hidden = true;
+  if(!gameActive){ syncStartCard(); $("ovStart").hidden=false; }
+};
 
-freshGame(false);
+syncStartCard();
 })();
 </script>
 </body>
