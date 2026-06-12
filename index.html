@@ -5,19 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HUEMAN — Free Daily Color Game | Spot the Odd Shade</title>
 <meta name="description" content="A free daily color game — like Wordle for your eyes. Spot the odd shade before time runs out, challenge your color vision, and share your score. New puzzle every day. No download, no signup.">
-<link rel="canonical" href="https://hueman-game.vercel.app/">
+<link rel="canonical" href="https://huemangame.com/">
 <meta property="og:title" content="HUEMAN — How hueman are you?">
 <meta property="og:description" content="One color puzzle a day. Same for everyone on Earth. Beat the clock. No words, no downloads, no excuses.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="HUEMAN">
-<meta property="og:url" content="https://hueman-game.vercel.app">
-<meta property="og:image" content="https://hueman-game.vercel.app/api/og">
+<meta property="og:url" content="https://huemangame.com/">
+<meta property="og:image" content="https://huemangame.com/api/og">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Today's HUEMAN puzzle teaser — a grid of colored tiles with one odd shade. Can you spot it?">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="HUEMAN — How hueman are you?">
 <meta name="twitter:description" content="One color puzzle a day. Same for everyone on Earth. Beat the clock.">
-<meta name="twitter:image" content="https://hueman-game.vercel.app/api/og">
+<meta name="twitter:image" content="https://huemangame.com/api/og">
+<meta name="theme-color" content="#0E0E12">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -29,10 +33,10 @@
   "@graph": [
     {
       "@type": "VideoGame",
-      "@id": "https://hueman-game.vercel.app/#game",
+      "@id": "https://huemangame.com/#game",
       "name": "HUEMAN",
       "alternateName": ["Hueman Color Game", "The Daily Color Game"],
-      "url": "https://hueman-game.vercel.app/",
+      "url": "https://huemangame.com/",
       "description": "HUEMAN is a free daily color game — like Wordle for your eyes. One puzzle a day, the same for everyone on Earth: spot the tile with the odd shade before the timer runs out. Each level the color difference gets smaller, the grid gets bigger, and the clock gets shorter. Three lives, then share your score.",
       "genre": ["Puzzle", "Casual", "Daily Game", "Color Perception"],
       "playMode": "SinglePlayer",
@@ -42,7 +46,7 @@
       "inLanguage": "en",
       "isAccessibleForFree": true,
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "image": "https://hueman-game.vercel.app/api/og",
+      "image": "https://huemangame.com/api/og",
       "publisher": { "@id": "https://puzzlepage.app/#org" }
     },
     {
@@ -53,14 +57,14 @@
     },
     {
       "@type": "WebSite",
-      "@id": "https://hueman-game.vercel.app/#website",
+      "@id": "https://huemangame.com/#website",
       "name": "HUEMAN — The Daily Color Game",
-      "url": "https://hueman-game.vercel.app/",
+      "url": "https://huemangame.com/",
       "publisher": { "@id": "https://puzzlepage.app/#org" }
     },
     {
       "@type": "FAQPage",
-      "@id": "https://hueman-game.vercel.app/#faq",
+      "@id": "https://huemangame.com/#faq",
       "mainEntity": [
         {
           "@type": "Question",
@@ -446,7 +450,7 @@
 (function(){
 "use strict";
 
-const SITE_URL = "https://hueman-game.vercel.app";
+const SITE_URL = "https://huemangame.com";
 const PP_URL   = "https://puzzlepage.app";
 
 /* ============ safe storage (works deployed; degrades in sandboxed previews) ============ */
@@ -729,7 +733,7 @@ $("btnCal").onclick = ()=>{
   const ics = [
     "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//PuzzlePage//HUEMAN//EN",
     "BEGIN:VEVENT",
-    "UID:hueman-daily-"+Date.now()+"@hueman-game.vercel.app",
+    "UID:hueman-daily-"+Date.now()+"@huemangame.com",
     "DTSTAMP:"+stamp,
     "DTSTART:"+dtstart,
     "RRULE:FREQ=DAILY",

@@ -8,7 +8,7 @@ A [Puzzle Page](https://puzzlepage.app) game — play more daily games or create
 
 ## Play
 
-Live at **https://hueman-game.vercel.app**, or open `index.html` in any browser.
+Live at **https://huemangame.com**, or open `index.html` in any browser.
 
 ## Features
 
