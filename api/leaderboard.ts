@@ -1,13 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getKv } from "./_lib/kv.js";
+import { getSql, ensureSchema } from "./_lib/db.js";
 import { currentDay } from "./_lib/day.js";
-import {
-  TOP_N,
-  lbKey,
-  metaKey,
-  rankForScore,
-  type MetaEntry,
-} from "./_lib/board.js";
+import { TOP_N, RETENTION_DAYS, rankForScore } from "./_lib/board.js";
 
 function qInt(v: VercelRequest["query"][string]): number | null {
   const s = Array.isArray(v) ? v[0] : v;
@@ -23,10 +17,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const today = currentDay();
-  // Default to today; allow viewing recent days only (within the key TTL window).
+  // Default to today; allow viewing recent days only (within the retention window).
   const requested = qInt(req.query.day);
   const day =
-    requested != null && requested <= today && requested >= today - 13
+    requested != null && requested <= today && requested >= today - (RETENTION_DAYS - 1)
       ? requested
       : today;
 
@@ -35,45 +29,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const geo = (Array.isArray(geoRaw) ? geoRaw[0] : geoRaw) || "";
 
   try {
-    const kv = getKv();
+    await ensureSchema();
+    const sql = getSql();
 
-    // Top N members (highest composite score first) + their display meta.
-    const flat = (await kv.zrange(lbKey(day), 0, TOP_N - 1, {
-      rev: true,
-      withScores: true,
-    })) as (string | number)[];
+    // Top N entries (highest composite score first) with their display meta.
+    const rows = (await sql`
+      SELECT name, country, level, time_ms
+      FROM scores
+      WHERE day = ${day}
+      ORDER BY score DESC
+      LIMIT ${TOP_N}
+    `) as { name: string; country: string; level: number; time_ms: number }[];
 
-    const members: string[] = [];
-    for (let i = 0; i < flat.length; i += 2) members.push(String(flat[i]));
+    const top = rows.map((r, i) => ({
+      rank: i + 1,
+      name: r.name ?? "Anonymous",
+      country: r.country ?? "ZZ",
+      level: r.level ?? 0,
+      timeMs: r.time_ms ?? 0,
+    }));
 
-    let top: Array<{ rank: number; name: string; country: string; level: number; timeMs: number }> = [];
-    if (members.length) {
-      const metas = (await kv.mget(
-        ...members.map((m) => metaKey(day, m))
-      )) as (MetaEntry | null)[];
-      top = members.map((_m, i) => {
-        const meta = metas[i];
-        return {
-          rank: i + 1,
-          name: meta?.name ?? "Anonymous",
-          country: meta?.country ?? "ZZ",
-          level: meta?.level ?? 0,
-          timeMs: meta?.timeMs ?? 0,
-        };
-      });
-    }
-
-    const total = await kv.zcard(lbKey(day));
+    const totalRows = (await sql`
+      SELECT count(*)::int AS total FROM scores WHERE day = ${day}
+    `) as { total: number }[];
+    const total = totalRows[0]?.total ?? 0;
 
     let me: { rank: number; level: number; timeMs: number } | null = null;
     if (pid) {
-      const score = (await kv.zscore(lbKey(day), pid)) as number | null;
-      if (score != null) {
-        const meta = (await kv.get<MetaEntry>(metaKey(day, pid))) as MetaEntry | null;
+      const meRows = (await sql`
+        SELECT score, level, time_ms FROM scores WHERE day = ${day} AND pid = ${pid}
+      `) as { score: number; level: number; time_ms: number }[];
+      const row = meRows[0];
+      if (row) {
         me = {
-          rank: await rankForScore(day, Number(score)),
-          level: meta?.level ?? 0,
-          timeMs: meta?.timeMs ?? 0,
+          rank: await rankForScore(day, Number(row.score)),
+          level: row.level ?? 0,
+          timeMs: row.time_ms ?? 0,
         };
       }
     }
@@ -81,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Cache-Control", "public, max-age=0, s-maxage=15");
     return res.status(200).json({ day, total, top, me, geo });
   } catch (err: any) {
-    const unconfigured = err && err.message === "kv_not_configured";
+    const unconfigured = err && err.message === "db_not_configured";
     return res
       .status(unconfigured ? 503 : 500)
       .json({ error: unconfigured ? "storage_unavailable" : "server_error", day, geo });

@@ -1,19 +1,16 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getKv } from "./_lib/kv.js";
-import { currentDay, secsToMidnight } from "./_lib/day.js";
+import { getSql, ensureSchema } from "./_lib/db.js";
+import { currentDay } from "./_lib/day.js";
 import { normalizeCountry } from "./_lib/countries.js";
 import { sanitizeName } from "./_lib/name.js";
 import {
-  TTL_SECONDS,
   LEVEL_MIN,
   LEVEL_MAX,
   TIME_MIN,
   TIME_MAX,
-  lbKey,
-  metaKey,
+  RETENTION_DAYS,
   compositeScore,
   rankForScore,
-  type MetaEntry,
 } from "./_lib/board.js";
 
 const PID_RE = /^[a-z0-9]{8,40}$/i;
@@ -74,34 +71,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : normalizeCountry(req.headers["x-vercel-ip-country"]);
 
   try {
-    const kv = getKv();
+    await ensureSchema();
+    const sql = getSql();
 
     // Per-IP per-day rate limit (caps spray, not a determined attacker).
-    const rlKey = `rl:${DAY}:${clientIp(req)}`;
-    const n = await kv.incr(rlKey);
-    if (n === 1) await kv.expire(rlKey, secsToMidnight());
-    if (n > RATE_LIMIT) return res.status(429).json({ error: "rate_limited" });
-
-    const score = compositeScore(level, timeMs);
-
-    // One entry per player per day; only overwrite if this run is better.
-    const existing = (await kv.zscore(lbKey(DAY), pid)) as number | null;
-    if (existing == null || score > Number(existing)) {
-      const meta: MetaEntry = { name, country, level, timeMs, ts: Date.now() };
-      await kv.zadd(lbKey(DAY), { score, member: pid });
-      await kv.set(metaKey(DAY, pid), meta, { ex: TTL_SECONDS });
-      await kv.expire(lbKey(DAY), TTL_SECONDS);
+    const rl = (await sql`
+      INSERT INTO rate_limits (day, ip, n) VALUES (${DAY}, ${clientIp(req)}, 1)
+      ON CONFLICT (day, ip) DO UPDATE SET n = rate_limits.n + 1
+      RETURNING n
+    `) as { n: number }[];
+    if ((rl[0]?.n ?? 0) > RATE_LIMIT) {
+      return res.status(429).json({ error: "rate_limited" });
     }
 
-    const best = (await kv.zscore(lbKey(DAY), pid)) as number | null;
+    const score = compositeScore(level, timeMs);
+    const ts = Date.now();
+
+    // One entry per player per day; only overwrite if this run is better.
+    await sql`
+      INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
+      VALUES (${DAY}, ${pid}, ${name}, ${country}, ${level}, ${timeMs}, ${score}, ${ts})
+      ON CONFLICT (day, pid) DO UPDATE SET
+        name = EXCLUDED.name, country = EXCLUDED.country, level = EXCLUDED.level,
+        time_ms = EXCLUDED.time_ms, score = EXCLUDED.score, ts = EXCLUDED.ts
+      WHERE EXCLUDED.score > scores.score
+    `;
+
+    // Opportunistically prune days that have aged out of the viewable window.
+    await sql`DELETE FROM scores WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
+    await sql`DELETE FROM rate_limits WHERE day < ${DAY}`;
+
+    const bestRows = (await sql`
+      SELECT score FROM scores WHERE day = ${DAY} AND pid = ${pid}
+    `) as { score: number }[];
+    const best = bestRows[0]?.score ?? null;
+
+    const totalRows = (await sql`
+      SELECT count(*)::int AS total FROM scores WHERE day = ${DAY}
+    `) as { total: number }[];
+    const total = totalRows[0]?.total ?? 0;
+
     const rank = best == null ? 0 : await rankForScore(DAY, Number(best));
-    const total = await kv.zcard(lbKey(DAY));
     const percentile =
       total > 0 ? Math.max(1, Math.round((1 - (rank - 1) / total) * 100)) : 100;
 
     return res.status(200).json({ ok: true, day: DAY, rank, total, percentile });
   } catch (err: any) {
-    const unconfigured = err && err.message === "kv_not_configured";
+    const unconfigured = err && err.message === "db_not_configured";
     return res
       .status(unconfigured ? 503 : 500)
       .json({ error: unconfigured ? "storage_unavailable" : "server_error" });
