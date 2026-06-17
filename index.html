@@ -364,6 +364,41 @@
   }
   .hist-lv{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
   .hist-empty{padding:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
+
+  /* ---------- leaderboard ---------- */
+  .lb-block{
+    margin:18px 0 4px;padding:16px 16px 14px;
+    background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+  }
+  .lb-title{font-size:1rem;font-weight:700;color:var(--text);margin:0 0 12px}
+  .lb-join-cap{font-size:.82rem;color:var(--muted);line-height:1.45;margin:0 0 10px}
+  .lb-input{
+    width:100%;padding:11px 13px;margin-bottom:8px;
+    border-radius:12px;border:1px solid var(--line);
+    background:var(--surface);color:var(--text);font-size:.95rem;font-family:inherit;
+  }
+  .lb-input:focus-visible{outline:2px solid var(--daily);outline-offset:1px}
+  select.lb-input{appearance:none;-webkit-appearance:none}
+  .lb-as{font-size:.86rem;color:var(--muted);margin:0 0 10px}
+  .lb-as b{color:var(--text)}
+  .lb-link{color:var(--daily);font-weight:600;text-decoration:underline}
+  .lb-list{
+    border:1px solid var(--line);border-radius:12px;background:var(--surface);
+    overflow:hidden;max-height:300px;overflow-y:auto;
+  }
+  .lb-block .lb-list{margin-bottom:10px}
+  .lb-row{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 12px;border-bottom:1px solid var(--line);font-size:.85rem;
+  }
+  .lb-row:last-child{border-bottom:none}
+  .lb-rank{min-width:26px;color:var(--muted);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .lb-flag{font-size:1.05rem;line-height:1}
+  .lb-name{flex:1;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .lb-score{font-weight:700;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+  .lb-me{background:color-mix(in srgb,var(--daily) 16%,transparent)}
+  .lb-me .lb-rank,.lb-me .lb-score{color:var(--text)}
+  .lb-block .btn.ghost{margin-top:0}
   .toast{
     position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
     background:var(--text);color:var(--ink);
@@ -451,6 +486,7 @@
   <h1 class="wordmark" aria-label="Hueman"><span class="hue">HUE</span><span class="man">MAN</span></h1>
   <div class="hdr-btns">
     <button class="icon-btn" id="btnNotify" aria-label="Get notified about the daily puzzle">🔔</button>
+    <button class="icon-btn" id="btnLeader" aria-label="Leaderboard">🌍</button>
     <button class="icon-btn" id="btnStats" aria-label="Statistics">▦</button>
     <button class="icon-btn" id="btnHelp" aria-label="How to play">?</button>
   </div>
@@ -597,6 +633,18 @@
       <button class="net-btn net-sms" data-net="sms" aria-label="Share by text message">💬 Text</button>
       <button class="net-btn net-copy" data-net="copy" aria-label="Copy score to clipboard">🔗 Copy</button>
     </div>
+    <div class="lb-block" id="resLeader">
+      <h3 class="lb-title">🌍 Today's leaderboard</h3>
+      <div id="lbJoin" hidden>
+        <p class="lb-join-cap">Add your name to today's global board — see how your eyes rank against the world.</p>
+        <input class="lb-input" id="lbName" type="text" maxlength="16" placeholder="Your name" autocomplete="off" spellcheck="false">
+        <select class="lb-input" id="lbCountry" aria-label="Country"></select>
+        <button class="btn daily-tint" id="lbSave">Join the leaderboard</button>
+      </div>
+      <p class="lb-as" id="lbAs" hidden></p>
+      <div class="lb-list" id="lbMini"></div>
+      <button class="btn ghost" id="lbFull" hidden>See the full board →</button>
+    </div>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
     <div class="pp-cta">
       <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
@@ -625,6 +673,18 @@
       <p class="pp-head">A whole platform of free daily games, live right now.</p>
       <a class="btn pp-btn" data-pp="notify" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">See all our free games →</a>
     </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="overlay" id="ovLeader" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>🌍 Daily leaderboard</h2>
+    <p class="sub" id="lbSub">Today's sharpest eyes worldwide.</p>
+    <div class="lb-list" id="lbList"></div>
+    <p class="fine" style="margin-top:14px">Everyone plays the same puzzle each day — finish today's to claim your spot. Rankings reset at midnight UTC.</p>
+    <button class="btn ghost" data-close>Back</button>
   </div>
 </div>
 
@@ -884,12 +944,16 @@ function endGame(){
   $("btnShare").style.display = showShare;
   document.querySelector(".share-row").style.display = showShare;
   $("ovResult").hidden = false;
+  $("resLeader").hidden = practice;
 
   if(!practice){
     saveResult(finalScore, grid);
     syncStartCard();
     wireShareButtons(shareText(finalScore, totalMs, grid));
     try{ va('event',{name:'game_complete',data:{day:DAY,level:finalScore}}); }catch(e){}
+    lbState.current = { level: finalScore, timeMs: totalMs };
+    lbMountResult();
+    lbSubmit(finalScore, totalMs);
   }
   tickCountdown();
   $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
@@ -910,6 +974,10 @@ function showSavedResult(){
   document.querySelector(".share-row").style.display = "";
   wireShareButtons(shareText(e.l, e.t, e.g));
   $("ovResult").hidden = false;
+  $("resLeader").hidden = false;
+  lbState.current = { level: e.l, timeMs: e.t };
+  lbMountResult();
+  lbSubmit(e.l, e.t);
   tickCountdown();
   $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
 }
@@ -1059,6 +1127,203 @@ $("btnCard").onclick = sharePlayerCard;
 $("btnHelp").onclick = ()=> $("ovHelp").hidden=false;
 $("btnStats").onclick = openStats;
 $("btnNotify").onclick = ()=> $("ovNotify").hidden=false;
+
+/* ============ leaderboard ============ */
+const LB_MINI = 10;
+const lbState = { geo:"", current:null };
+const COUNTRIES = [
+  ["AF","Afghanistan"],["AL","Albania"],["DZ","Algeria"],["AD","Andorra"],["AO","Angola"],
+  ["AG","Antigua & Barbuda"],["AR","Argentina"],["AM","Armenia"],["AU","Australia"],["AT","Austria"],
+  ["AZ","Azerbaijan"],["BS","Bahamas"],["BH","Bahrain"],["BD","Bangladesh"],["BB","Barbados"],
+  ["BY","Belarus"],["BE","Belgium"],["BZ","Belize"],["BJ","Benin"],["BT","Bhutan"],
+  ["BO","Bolivia"],["BA","Bosnia & Herzegovina"],["BW","Botswana"],["BR","Brazil"],["BN","Brunei"],
+  ["BG","Bulgaria"],["BF","Burkina Faso"],["BI","Burundi"],["KH","Cambodia"],["CM","Cameroon"],
+  ["CA","Canada"],["CV","Cape Verde"],["CF","Central African Rep."],["TD","Chad"],["CL","Chile"],
+  ["CN","China"],["CO","Colombia"],["KM","Comoros"],["CG","Congo"],["CD","Congo (DRC)"],
+  ["CR","Costa Rica"],["CI","Côte d'Ivoire"],["HR","Croatia"],["CU","Cuba"],["CY","Cyprus"],
+  ["CZ","Czechia"],["DK","Denmark"],["DJ","Djibouti"],["DM","Dominica"],["DO","Dominican Rep."],
+  ["EC","Ecuador"],["EG","Egypt"],["SV","El Salvador"],["GQ","Equatorial Guinea"],["ER","Eritrea"],
+  ["EE","Estonia"],["SZ","Eswatini"],["ET","Ethiopia"],["FJ","Fiji"],["FI","Finland"],
+  ["FR","France"],["GA","Gabon"],["GM","Gambia"],["GE","Georgia"],["DE","Germany"],
+  ["GH","Ghana"],["GR","Greece"],["GD","Grenada"],["GT","Guatemala"],["GN","Guinea"],
+  ["GW","Guinea-Bissau"],["GY","Guyana"],["HT","Haiti"],["HN","Honduras"],["HK","Hong Kong"],
+  ["HU","Hungary"],["IS","Iceland"],["IN","India"],["ID","Indonesia"],["IR","Iran"],
+  ["IQ","Iraq"],["IE","Ireland"],["IL","Israel"],["IT","Italy"],["JM","Jamaica"],
+  ["JP","Japan"],["JO","Jordan"],["KZ","Kazakhstan"],["KE","Kenya"],["KI","Kiribati"],
+  ["KW","Kuwait"],["KG","Kyrgyzstan"],["LA","Laos"],["LV","Latvia"],["LB","Lebanon"],
+  ["LS","Lesotho"],["LR","Liberia"],["LY","Libya"],["LI","Liechtenstein"],["LT","Lithuania"],
+  ["LU","Luxembourg"],["MO","Macau"],["MG","Madagascar"],["MW","Malawi"],["MY","Malaysia"],
+  ["MV","Maldives"],["ML","Mali"],["MT","Malta"],["MH","Marshall Islands"],["MR","Mauritania"],
+  ["MU","Mauritius"],["MX","Mexico"],["FM","Micronesia"],["MD","Moldova"],["MC","Monaco"],
+  ["MN","Mongolia"],["ME","Montenegro"],["MA","Morocco"],["MZ","Mozambique"],["MM","Myanmar"],
+  ["NA","Namibia"],["NR","Nauru"],["NP","Nepal"],["NL","Netherlands"],["NZ","New Zealand"],
+  ["NI","Nicaragua"],["NE","Niger"],["NG","Nigeria"],["KP","North Korea"],["MK","North Macedonia"],
+  ["NO","Norway"],["OM","Oman"],["PK","Pakistan"],["PW","Palau"],["PS","Palestine"],
+  ["PA","Panama"],["PG","Papua New Guinea"],["PY","Paraguay"],["PE","Peru"],["PH","Philippines"],
+  ["PL","Poland"],["PT","Portugal"],["PR","Puerto Rico"],["QA","Qatar"],["RO","Romania"],
+  ["RU","Russia"],["RW","Rwanda"],["KN","St. Kitts & Nevis"],["LC","St. Lucia"],["VC","St. Vincent"],
+  ["WS","Samoa"],["SM","San Marino"],["ST","São Tomé & Príncipe"],["SA","Saudi Arabia"],["SN","Senegal"],
+  ["RS","Serbia"],["SC","Seychelles"],["SL","Sierra Leone"],["SG","Singapore"],["SK","Slovakia"],
+  ["SI","Slovenia"],["SB","Solomon Islands"],["SO","Somalia"],["ZA","South Africa"],["KR","South Korea"],
+  ["SS","South Sudan"],["ES","Spain"],["LK","Sri Lanka"],["SD","Sudan"],["SR","Suriname"],
+  ["SE","Sweden"],["CH","Switzerland"],["SY","Syria"],["TW","Taiwan"],["TJ","Tajikistan"],
+  ["TZ","Tanzania"],["TH","Thailand"],["TL","Timor-Leste"],["TG","Togo"],["TO","Tonga"],
+  ["TT","Trinidad & Tobago"],["TN","Tunisia"],["TR","Türkiye"],["TM","Turkmenistan"],["TV","Tuvalu"],
+  ["UG","Uganda"],["UA","Ukraine"],["AE","United Arab Emirates"],["GB","United Kingdom"],["US","United States"],
+  ["UY","Uruguay"],["UZ","Uzbekistan"],["VU","Vanuatu"],["VA","Vatican City"],["VE","Venezuela"],
+  ["VN","Vietnam"],["YE","Yemen"],["ZM","Zambia"],["ZW","Zimbabwe"],["ZZ","Somewhere on Earth"],
+];
+
+function lbFlag(code){
+  if(typeof code!=="string" || !/^[A-Za-z]{2}$/.test(code) || code.toUpperCase()==="ZZ") return "🏳️";
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(0x1F1E6 + cc.charCodeAt(0) - 65, 0x1F1E6 + cc.charCodeAt(1) - 65);
+}
+function lbEsc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function lbPid(){
+  let p = store.get("hm_pid");
+  if(!p){
+    p = (window.crypto && crypto.randomUUID) ? crypto.randomUUID().replace(/-/g,"")
+        : (Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/[^a-z0-9]/g,"").slice(0,32);
+    store.set("hm_pid", p);
+  }
+  return p;
+}
+function lbName(){ return (store.get("hm_name")||"").trim(); }
+function lbCountry(){ return (store.get("hm_country")||"").trim(); }
+function lbJoined(){ return !!(lbName() && lbCountry()); }
+
+function lbBuildSelect(def){
+  const sel = $("lbCountry");
+  if(!sel._built){
+    sel.innerHTML = COUNTRIES.map(c=>`<option value="${c[0]}">${lbEsc(c[1])}</option>`).join("");
+    sel._built = true;
+  }
+  if(def && COUNTRIES.some(c=>c[0]===def)) sel.value = def;
+}
+
+function lbRows(top, meRank){
+  if(!top || !top.length){
+    return '<div class="hist-empty">Be the first to finish today — your time sets the bar. 🏁</div>';
+  }
+  return top.map(e=>{
+    const mine = meRank && e.rank===meRank;
+    return `<div class="lb-row${mine?' lb-me':''}">`+
+      `<span class="lb-rank">${e.rank}</span>`+
+      `<span class="lb-flag">${lbFlag(e.country)}</span>`+
+      `<span class="lb-name">${lbEsc(e.name)}</span>`+
+      `<span class="lb-score">Lv ${e.level} · ${fmtClock(e.timeMs)}</span>`+
+    `</div>`;
+  }).join("");
+}
+
+function lbFetch(){
+  const pid = store.get("hm_pid")||"";
+  return fetch(`/api/leaderboard?day=${DAY}${pid?`&pid=${encodeURIComponent(pid)}`:""}`)
+    .then(r=>{ if(!r.ok) throw new Error("lb"); return r.json(); });
+}
+
+function lbRenderMini(){
+  const el = $("lbMini");
+  el.innerHTML = '<div class="hist-empty">Loading today\'s board…</div>';
+  $("lbFull").hidden = true;
+  lbFetch().then(d=>{
+    lbState.geo = d.geo || lbState.geo;
+    if(!lbJoined() && !lbCountry() && lbState.geo) lbBuildSelect(lbState.geo);
+    const top = (d.top||[]).slice(0, LB_MINI);
+    let html = lbRows(top, d.me ? d.me.rank : 0);
+    if(d.me && d.me.rank > LB_MINI){
+      html += `<div class="lb-row lb-me"><span class="lb-rank">${d.me.rank}</span>`+
+        `<span class="lb-flag">${lbFlag(lbCountry())}</span>`+
+        `<span class="lb-name">You</span>`+
+        `<span class="lb-score">Lv ${d.me.level} · ${fmtClock(d.me.timeMs)}</span></div>`;
+    }
+    el.innerHTML = html;
+    $("lbFull").hidden = (d.total||0) <= LB_MINI;
+  }).catch(()=>{ el.innerHTML = '<div class="hist-empty">Leaderboard unavailable right now.</div>'; });
+}
+
+function lbMountResult(){
+  const joined = lbJoined();
+  $("lbJoin").hidden = joined;
+  $("lbAs").hidden = !joined;
+  if(joined){
+    $("lbAs").innerHTML = `Playing as <b>${lbEsc(lbName())}</b> ${lbFlag(lbCountry())} · <button class="lb-link" type="button" id="lbChange">change</button>`;
+    $("lbChange").onclick = ()=>{ lbBuildSelect(lbCountry()); $("lbName").value = lbName(); $("lbJoin").hidden=false; $("lbAs").hidden=true; $("lbName").focus(); };
+  } else {
+    lbBuildSelect(lbCountry() || lbState.geo || "");
+    $("lbName").value = lbName();
+  }
+  lbRenderMini();
+}
+
+function lbSubmit(level, timeMs){
+  if(!lbJoined()) return;            // wait until the player has joined
+  const payload = { pid: lbPid(), name: lbName(), country: lbCountry(), level, timeMs, day: DAY };
+  fetch("/api/score", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)})
+    .then(r=>{
+      if(r.status===409) return null;       // day rolled over — drop
+      if(!r.ok) throw new Error("submit");
+      return r.json();
+    })
+    .then(d=>{
+      if(!d) return;
+      try{ va('event',{name:'leaderboard_submit',data:{day:DAY,level,country:payload.country}}); }catch(e){}
+      if(!$("ovResult").hidden && !$("resLeader").hidden) lbRenderMini();
+      if(!$("ovLeader").hidden) lbOpenFull(true);
+    })
+    .catch(()=>lbQueue(payload));
+}
+
+function lbQueue(p){
+  try{
+    const q = JSON.parse(store.get("hm_lbq")||"[]");
+    q.push(p);
+    store.set("hm_lbq", JSON.stringify(q.slice(-10)));
+  }catch(e){}
+}
+function lbFlush(){
+  let q;
+  try{ q = JSON.parse(store.get("hm_lbq")||"[]"); }catch(e){ return; }
+  if(!q.length) return;
+  const keep = [];
+  let chain = Promise.resolve();
+  q.forEach(p=>{
+    if(p.day!==DAY) return;   // stale — drop
+    chain = chain.then(()=>fetch("/api/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)})
+      .then(r=>{ if(!r.ok && r.status!==409) keep.push(p); })
+      .catch(()=>keep.push(p)));
+  });
+  chain.then(()=>store.set("hm_lbq", JSON.stringify(keep)));
+}
+
+function lbOpenFull(silent){
+  $("ovLeader").hidden = false;
+  if(!silent){
+    $("lbList").innerHTML = '<div class="hist-empty">Loading…</div>';
+    try{ va('event',{name:'leaderboard_view',data:{day:DAY}}); }catch(e){}
+  }
+  lbFetch().then(d=>{
+    lbState.geo = d.geo || lbState.geo;
+    const total = d.total||0;
+    $("lbSub").textContent = total ? `${total} player${total===1?"":"s"} so far today · sharpest eyes worldwide` : "Today's sharpest eyes worldwide.";
+    $("lbList").innerHTML = lbRows(d.top, d.me ? d.me.rank : 0);
+  }).catch(()=>{ $("lbList").innerHTML = '<div class="hist-empty">Couldn\'t load the leaderboard — check your connection and try again.</div>'; });
+}
+
+$("btnLeader").onclick = ()=>lbOpenFull(false);
+$("lbFull").onclick = ()=>lbOpenFull(false);
+$("lbSave").onclick = ()=>{
+  const nm = ($("lbName").value||"").trim().slice(0,16);
+  const co = $("lbCountry").value||"";
+  if(!nm){ $("lbName").focus(); return; }
+  store.set("hm_name", nm);
+  store.set("hm_country", co);
+  try{ va('event',{name:'leaderboard_join',data:{day:DAY,country:co}}); }catch(e){}
+  lbMountResult();
+  if(lbState.current) lbSubmit(lbState.current.level, lbState.current.timeMs);
+};
+lbFlush();
 
 /* ============ get notified ============ */
 $("btnPush").onclick = async ()=>{
