@@ -1,40 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getSql, ensureSchema } from "./_lib/db.js";
 import { currentDay } from "./_lib/day.js";
-import { TOP_N, RETENTION_DAYS, rankForScore, compositeScore } from "./_lib/board.js";
-
-// TEMPORARY: write-path self-test, exercised via ?selftest=1, on an isolated
-// synthetic day that real queries never touch. Cleans up after itself. Removed
-// once the Neon port is verified.
-async function runSelfTest(res: VercelResponse) {
-  const steps: Record<string, unknown> = {};
-  try {
-    await ensureSchema();
-    const sql = getSql();
-    steps.schema = "ok";
-    const TEST_DAY = 999_999;
-    const pid = "selftest" + Math.random().toString(36).slice(2, 10);
-    const score = compositeScore(13, 31234);
-    await sql`
-      INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
-      VALUES (${TEST_DAY}, ${pid}, ${"SelfTest"}, ${"US"}, ${13}, ${31234}, ${score}, ${Date.now()})
-      ON CONFLICT (day, pid) DO UPDATE SET score = EXCLUDED.score
-      WHERE EXCLUDED.score > scores.score
-    `;
-    steps.insert = "ok";
-    const back = (await sql`
-      SELECT name, country, level, time_ms, score FROM scores
-      WHERE day = ${TEST_DAY} AND pid = ${pid}
-    `) as any[];
-    steps.readBack = back[0] ?? null;
-    steps.rank = await rankForScore(TEST_DAY, score);
-    const del = (await sql`DELETE FROM scores WHERE day = ${TEST_DAY} RETURNING pid`) as any[];
-    steps.cleanedUp = del.length;
-    return res.status(200).json({ ok: true, steps });
-  } catch (err: any) {
-    return res.status(500).json({ ok: false, error: err?.message, steps });
-  }
-}
+import { TOP_N, RETENTION_DAYS, rankForScore } from "./_lib/board.js";
 
 function qInt(v: VercelRequest["query"][string]): number | null {
   const s = Array.isArray(v) ? v[0] : v;
@@ -48,8 +15,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "method_not_allowed" });
   }
-
-  if (req.query.selftest === "1") return runSelfTest(res);
 
   const today = currentDay();
   // Default to today; allow viewing recent days only (within the retention window).
