@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getSql, ensureSchema } from "./_lib/db.js";
 import { currentDay } from "./_lib/day.js";
 import { TOP_N, RETENTION_DAYS, rankForScore } from "./_lib/board.js";
+import { ensureSeeded } from "./_lib/seed.js";
 
 function qInt(v: VercelRequest["query"][string]): number | null {
   const s = Array.isArray(v) ? v[0] : v;
@@ -31,6 +32,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchema();
     const sql = getSql();
+
+    // Keep the viewed day populated with holding entries so it's never empty.
+    await ensureSeeded(day);
 
     // Top N entries (highest composite score first) with their display meta.
     const rows = (await sql`

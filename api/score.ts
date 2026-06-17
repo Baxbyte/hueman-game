@@ -12,6 +12,7 @@ import {
   compositeScore,
   rankForScore,
 } from "./_lib/board.js";
+import { ensureSeeded } from "./_lib/seed.js";
 
 const PID_RE = /^[a-z0-9]{8,40}$/i;
 const RATE_LIMIT = 30; // submissions per IP per day
@@ -83,6 +84,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if ((rl[0]?.n ?? 0) > RATE_LIMIT) {
       return res.status(429).json({ error: "rate_limited" });
     }
+
+    // Ensure the day's holding entries exist so rank/total/percentile are
+    // computed against a populated board, consistent with what's displayed.
+    await ensureSeeded(DAY);
 
     const score = compositeScore(level, timeMs);
     const ts = Date.now();
