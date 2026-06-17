@@ -417,6 +417,32 @@
   .ph-badge img{display:block;width:230px;height:auto}
   footer .ph-badge{margin-top:12px}
   footer .ph-badge img{width:210px}
+
+  /* ---------- Puzzle Page cross-promo CTA ---------- */
+  .pp-cta{
+    margin:18px 0 4px;padding:16px 16px 16px;
+    background:var(--surface-2);
+    border:1px solid var(--line);border-radius:14px;text-align:center;
+    position:relative;overflow:hidden;
+  }
+  .pp-cta::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(135deg,
+      color-mix(in srgb,var(--daily) 14%,transparent),
+      transparent 60%);
+  }
+  .pp-cta > *{position:relative}
+  .pp-eyebrow{
+    font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px;
+  }
+  .pp-head{
+    font-size:1rem;font-weight:700;color:var(--text);line-height:1.4;margin:0 0 13px;
+  }
+  .pp-btn{
+    background:var(--daily);color:#fff;margin-top:0;
+  }
+  .pp-btn:hover{opacity:.92;text-decoration:none}
 </style>
 </head>
 <body>
@@ -495,6 +521,11 @@
       <span aria-hidden="true">·</span>
       <button id="btnStartStats">My stats &amp; streaks</button>
     </div>
+    <div class="pp-cta">
+      <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
+      <p class="pp-head">One puzzle a day not enough? Browse the rest, free and live.</p>
+      <a class="btn pp-btn" data-pp="start" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">See all our free games →</a>
+    </div>
   </div>
 </div>
 
@@ -511,7 +542,11 @@
     <p>Everyone on Earth gets the <b>same puzzle</b> today. Compare scores, settle arguments.</p>
     <button class="btn daily-tint" data-close>Play today's puzzle</button>
     <p class="fine" style="margin-top:14px">Color vision varies from person to person — that's the whole point. Shade differences include brightness shifts, so the game stays playable with most types of color vision deficiency.</p>
-    <p class="fine" style="margin-top:10px">HUEMAN is part of <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">Puzzle Page</a> — discover more daily games or build your own at puzzlepage.app.</p>
+    <div class="pp-cta">
+      <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
+      <p class="pp-head">Your daily puzzle fix doesn't end here.</p>
+      <a class="btn pp-btn" data-pp="help" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">See all our free games →</a>
+    </div>
   </div>
 </div>
 
@@ -532,6 +567,11 @@
     <div class="hist" id="histList"></div>
     <button class="btn daily-tint" id="btnCard">🎨 Share my player card</button>
     <button class="btn ghost" data-close>Back</button>
+    <div class="pp-cta">
+      <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
+      <p class="pp-head">Love a daily habit? We've got a whole lineup, all free.</p>
+      <a class="btn pp-btn" data-pp="stats" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">See all our free games →</a>
+    </div>
     <p class="fine" style="margin-top:14px">Your stats, streak and history are saved in this browser on this device — no account needed. Clearing site data, private browsing, or switching devices starts you fresh.</p>
   </div>
 </div>
@@ -558,7 +598,11 @@
       <button class="net-btn net-copy" data-net="copy" aria-label="Copy score to clipboard">🔗 Copy</button>
     </div>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
-    <a class="btn ghost" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener" style="color:var(--text)">More games on Puzzle Page →</a>
+    <div class="pp-cta">
+      <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
+      <p class="pp-head">That's today's HUEMAN — plenty more free games where that came from.</p>
+      <a class="btn pp-btn" data-pp="result" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">See all our free games →</a>
+    </div>
     <div class="ph-support">
       <p class="ph-cta">Made by two people, no ads, no signup. <b>Check out our recent launch on Product Hunt</b> — we were featured! 💛</p>
       <a class="ph-badge" data-ph="result" href="https://www.producthunt.com/products/how-hueman-are-you?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-how-hueman-are-you" target="_blank" rel="noopener noreferrer"><img alt="How Hueman Are You? - Find the odd tile before the clock runs out | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1170386&amp;theme=light&amp;t=1781618054596"></a>
@@ -575,7 +619,12 @@
     <p class="sub">A new puzzle goes live every day at midnight UTC. Pick how you want the nudge:</p>
     <button class="btn daily-tint" id="btnPush">🔔 Browser alerts on this device</button>
     <button class="btn ghost" id="btnCal">📅 Daily calendar reminder (.ics)</button>
-    <p class="fine" style="margin-top:14px">The calendar reminder syncs everywhere your calendar does — phone, computer, and email via Google, Apple, or Outlook. For email alerts and more daily games, head to <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">puzzlepage.app</a>.</p>
+    <p class="fine" style="margin-top:14px">The calendar reminder syncs everywhere your calendar does — phone, computer, and email via Google, Apple, or Outlook.</p>
+    <div class="pp-cta">
+      <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
+      <p class="pp-head">A whole platform of free daily games, live right now.</p>
+      <a class="btn pp-btn" data-pp="notify" href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">See all our free games →</a>
+    </div>
   </div>
 </div>
 
@@ -1093,6 +1142,13 @@ fillDemo("demoRow"); fillDemo("startDemo");
 document.querySelectorAll(".ph-badge").forEach(b=>{
   b.addEventListener("click", ()=>{
     try{ va('event',{name:'producthunt_click',data:{day:DAY,where:b.dataset.ph||"unknown"}}); }catch(e){}
+  });
+});
+
+/* track Puzzle Page cross-promo CTA clicks (where + how many) */
+document.querySelectorAll(".pp-btn").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    try{ va('event',{name:'puzzlepage_click',data:{day:DAY,where:b.dataset.pp||"unknown"}}); }catch(e){}
   });
 });
 
