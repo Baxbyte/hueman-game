@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { getKv } from "./kv.js";
 
 // Keep daily keys around for two weeks so "yesterday" stays viewable and late
 // stragglers still resolve, then let them auto-evict.
@@ -35,6 +35,6 @@ export function compositeScore(level: number, timeMs: number): number {
 /** 1-based rank within the day for a given composite score (1 = best). */
 export async function rankForScore(day: number, score: number): Promise<number> {
   // Count members strictly better (higher score) than this one.
-  const better = await kv.zcount(lbKey(day), `(${score}`, "+inf");
+  const better = await getKv().zcount(lbKey(day), `(${score}`, "+inf");
   return (Number(better) || 0) + 1;
 }

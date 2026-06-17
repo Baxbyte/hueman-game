@@ -1,5 +1,5 @@
-import { kv } from "@vercel/kv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { getKv } from "./_lib/kv.js";
 import { currentDay, secsToMidnight } from "./_lib/day.js";
 import { normalizeCountry } from "./_lib/countries.js";
 import { sanitizeName } from "./_lib/name.js";
@@ -73,27 +73,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? normalizeCountry(body.country)
       : normalizeCountry(req.headers["x-vercel-ip-country"]);
 
-  // Per-IP per-day rate limit (caps spray, not a determined attacker).
-  const rlKey = `rl:${DAY}:${clientIp(req)}`;
-  const n = await kv.incr(rlKey);
-  if (n === 1) await kv.expire(rlKey, secsToMidnight());
-  if (n > RATE_LIMIT) return res.status(429).json({ error: "rate_limited" });
+  try {
+    const kv = getKv();
 
-  const score = compositeScore(level, timeMs);
+    // Per-IP per-day rate limit (caps spray, not a determined attacker).
+    const rlKey = `rl:${DAY}:${clientIp(req)}`;
+    const n = await kv.incr(rlKey);
+    if (n === 1) await kv.expire(rlKey, secsToMidnight());
+    if (n > RATE_LIMIT) return res.status(429).json({ error: "rate_limited" });
 
-  // One entry per player per day; only overwrite if this run is better.
-  const existing = (await kv.zscore(lbKey(DAY), pid)) as number | null;
-  if (existing == null || score > Number(existing)) {
-    const meta: MetaEntry = { name, country, level, timeMs, ts: Date.now() };
-    await kv.zadd(lbKey(DAY), { score, member: pid });
-    await kv.set(metaKey(DAY, pid), meta, { ex: TTL_SECONDS });
-    await kv.expire(lbKey(DAY), TTL_SECONDS);
+    const score = compositeScore(level, timeMs);
+
+    // One entry per player per day; only overwrite if this run is better.
+    const existing = (await kv.zscore(lbKey(DAY), pid)) as number | null;
+    if (existing == null || score > Number(existing)) {
+      const meta: MetaEntry = { name, country, level, timeMs, ts: Date.now() };
+      await kv.zadd(lbKey(DAY), { score, member: pid });
+      await kv.set(metaKey(DAY, pid), meta, { ex: TTL_SECONDS });
+      await kv.expire(lbKey(DAY), TTL_SECONDS);
+    }
+
+    const best = (await kv.zscore(lbKey(DAY), pid)) as number | null;
+    const rank = best == null ? 0 : await rankForScore(DAY, Number(best));
+    const total = await kv.zcard(lbKey(DAY));
+    const percentile =
+      total > 0 ? Math.max(1, Math.round((1 - (rank - 1) / total) * 100)) : 100;
+
+    return res.status(200).json({ ok: true, day: DAY, rank, total, percentile });
+  } catch (err: any) {
+    const unconfigured = err && err.message === "kv_not_configured";
+    return res
+      .status(unconfigured ? 503 : 500)
+      .json({ error: unconfigured ? "storage_unavailable" : "server_error" });
   }
-
-  const best = (await kv.zscore(lbKey(DAY), pid)) as number | null;
-  const rank = best == null ? 0 : await rankForScore(DAY, Number(best));
-  const total = await kv.zcard(lbKey(DAY));
-  const percentile = total > 0 ? Math.max(1, Math.round((1 - (rank - 1) / total) * 100)) : 100;
-
-  return res.status(200).json({ ok: true, day: DAY, rank, total, percentile });
 }
