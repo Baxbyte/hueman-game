@@ -1,0 +1,41 @@
+import { getSql } from "./db.js";
+
+export const LEVEL_MIN = 1;
+export const LEVEL_MAX = 25;
+export const TIME_MIN = 200; // ms — sub-200ms for a real run is implausible
+export const TIME_MAX = 3_600_000; // ms — cap at one hour
+
+export const TOP_N = 50;
+
+// Keep ~two weeks of days around so "yesterday" stays viewable and late
+// stragglers still resolve, then prune older rows opportunistically on write.
+export const RETENTION_DAYS = 14;
+
+export type MetaEntry = {
+  name: string;
+  country: string;
+  level: number;
+  timeMs: number;
+  ts: number;
+};
+
+/**
+ * Composite sort score: level dominates (higher is better) and faster time
+ * breaks ties. Time is clamped so it can never bleed into the level band above.
+ * Stored as a bigint column, so we round to an integer here.
+ */
+export function compositeScore(level: number, timeMs: number): number {
+  const t = Math.min(Math.max(timeMs, 0), 9_999_999);
+  return Math.round(level * 1e7 - t / 1000);
+}
+
+/** 1-based rank within the day for a given composite score (1 = best). */
+export async function rankForScore(day: number, score: number): Promise<number> {
+  // Count entries strictly better (higher score) than this one.
+  const rows = (await getSql()`
+    SELECT count(*)::int AS better
+    FROM scores
+    WHERE day = ${day} AND score > ${score}
+  `) as { better: number }[];
+  return (rows[0]?.better ?? 0) + 1;
+}
