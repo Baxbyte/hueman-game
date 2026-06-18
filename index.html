@@ -1259,7 +1259,7 @@ function lbMountResult(){
 
 function lbSubmit(level, timeMs){
   if(!lbJoined()) return;            // wait until the player has joined
-  const payload = { pid: lbPid(), name: lbName(), country: lbCountry(), level, timeMs, day: DAY };
+  const payload = { pid: lbPid(), name: lbName(), country: lbCountry(), level: Math.round(level), timeMs: Math.max(0, Math.round(timeMs)), day: DAY };
   fetch("/api/score", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)})
     .then(r=>{
       if(r.status===409) return null;       // day rolled over — drop
