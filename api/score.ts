@@ -25,8 +25,10 @@ function clientIp(req: VercelRequest): string {
 
 function clampInt(v: unknown, min: number, max: number): number | null {
   const n = typeof v === "number" ? v : Number(v);
-  if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
-  return Math.min(max, Math.max(min, n));
+  if (!Number.isFinite(n)) return null;
+  // Round rather than reject non-integers: client timing values are fractional
+  // (performance.now() deltas), and must not be turned away as "bad_score".
+  return Math.min(max, Math.max(min, Math.round(n)));
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
