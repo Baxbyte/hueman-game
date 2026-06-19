@@ -1,0 +1,42 @@
+name: HUEMAN daily email
+
+# Hourly trigger for the daily-email send. The endpoint itself decides WHO to
+# email this hour — each subscriber is sent the day's puzzle once their local
+# clock reaches EMAIL_SEND_HOUR (default 8am), so delivery is timed to each
+# person's own time zone. Runs free on GitHub Actions, so it works regardless
+# of the Vercel plan's cron limits.
+#
+# Setup (one-time):
+#   1. In the Vercel project, set CRON_SECRET (plus RESEND_API_KEY,
+#      RESEND_FROM_EMAIL, and optionally EMAIL_SEND_HOUR).
+#   2. In this GitHub repo: Settings → Secrets and variables → Actions →
+#      add a secret CRON_SECRET with the SAME value.
+#
+# Scheduled workflows only run from the default branch, so this stays dormant
+# until merged — preview deploys never send real mail.
+on:
+  schedule:
+    - cron: "0 * * * *" # top of every hour (UTC); GitHub may delay under load
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+concurrency:
+  group: hueman-daily-email
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger /api/cron/daily-send
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -sS -m 90 -o /tmp/resp.json -w '%{http_code}' \
+            -X POST "https://huemangame.com/api/cron/daily-send" \
+            -H "Authorization: Bearer ${CRON_SECRET}")
+          echo "HTTP ${code}"
+          cat /tmp/resp.json || true
+          echo
+          # Fail the run on a non-2xx so failures are visible in the Actions tab.
+          case "${code}" in 2*) exit 0 ;; *) exit 1 ;; esac
