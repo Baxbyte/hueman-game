@@ -212,13 +212,31 @@
   .tile.reveal{outline:3px solid var(--text);outline-offset:-3px;animation:pulse .5s ease 2}
   @keyframes pop{40%{transform:scale(1.08)}100%{transform:scale(1)}}
   @keyframes pulse{50%{opacity:.55}}
+  /* late-game obstacles — escalating distractions unlocked at L30/40/50/60.
+     One tier class on #board at a time; kept above .board-shake so the
+     wrong-answer shake still wins the cascade when both are present. */
+  .obs-t1{animation:obsSway 3.2s ease-in-out infinite}
+  .obs-t2,.obs-t3,.obs-t4{animation:obsSway 3.2s ease-in-out infinite, obsHue 7s linear infinite}
+  .obs-t3 .tile:not(.correct):not(.reveal),
+  .obs-t4 .tile:not(.correct):not(.reveal){animation:obsMorph 2.4s ease-in-out infinite}
+  .tile.decoy-flash{box-shadow:0 0 0 3px var(--text) inset;filter:brightness(1.18)}
+  @keyframes obsSway{
+    0%,100%{transform:translate(0,0) rotate(0deg)}
+    25%{transform:translate(1.4%,-1%) rotate(.8deg)}
+    50%{transform:translate(0,1.4%) rotate(0deg)}
+    75%{transform:translate(-1.4%,-1%) rotate(-.8deg)}
+  }
+  @keyframes obsHue{to{filter:hue-rotate(360deg)}}
+  @keyframes obsMorph{0%,100%{border-radius:var(--radius)}50%{border-radius:50%;transform:rotate(8deg) scale(.94)}}
   .board-shake{animation:shake .4s ease}
   @keyframes shake{
     20%{transform:translateX(-8px)}40%{transform:translateX(8px)}
     60%{transform:translateX(-5px)}80%{transform:translateX(5px)}
   }
   @media (prefers-reduced-motion:reduce){
-    .tile,.tile.correct,.tile.reveal,.board-shake{animation:none;transition:none}
+    .tile,.tile.correct,.tile.reveal,.board-shake,
+    .obs-t1,.obs-t2,.obs-t3,.obs-t4,
+    .obs-t3 .tile,.obs-t4 .tile{animation:none;transition:none}
   }
 
   /* ---------- overlays ---------- */
@@ -398,6 +416,11 @@
   .lb-score{font-weight:700;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
   .lb-me{background:color-mix(in srgb,var(--daily) 16%,transparent)}
   .lb-me .lb-rank,.lb-me .lb-score{color:var(--text)}
+  .lb-meta{display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .lb-streak{color:var(--muted);font-weight:700;font-size:.78rem;font-variant-numeric:tabular-nums}
+  .lb-trend{font-weight:800;font-size:.8rem;line-height:1}
+  .lb-trend.up{color:#3CCB7F}
+  .lb-trend.down{color:#E0524D}
   .lb-block .btn.ghost{margin-top:0}
   .toast{
     position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
@@ -782,6 +805,34 @@ function loadHist(){
 function saveHist(h){ store.set("hm_hist", JSON.stringify(h)); }
 function playedToday(){ return !!loadHist()[DAY]; }
 
+/* ============ late-game obstacles (unlocked at L30/40/50/60) ============ */
+const MAX_LEVEL = 60;   // top-out level (intentionally undocumented in the UI)
+let decoyTimer = null;
+function clearObstacles(){
+  if(decoyTimer){ clearInterval(decoyTimer); decoyTimer=null; }
+  board.classList.remove("obs-t1","obs-t2","obs-t3","obs-t4");
+}
+/* Cumulative tiers: 30 sway · 40 shifting colors · 50 morphing shapes · 60 decoys */
+function applyObstacles(lv){
+  clearObstacles();
+  const tier = lv>=60?4 : lv>=50?3 : lv>=40?2 : lv>=30?1 : 0;
+  if(!tier) return;
+  board.classList.add("obs-t"+tier);
+  if(tier>=4){
+    // Briefly bait a random non-answer tile to mislead the eye.
+    decoyTimer = setInterval(()=>{
+      if(locked || overlayOpen() || !cur) return;
+      const kids = board.children, len = kids.length;
+      if(len<2) return;
+      let idx = Math.floor(Math.random()*len);
+      if(idx===cur.oddIdx) idx = (idx+1)%len;   // never flash the real answer
+      const el = kids[idx]; if(!el) return;
+      el.classList.add("decoy-flash");
+      setTimeout(()=>{ el.classList.remove("decoy-flash"); }, 340);
+    }, 850);
+  }
+}
+
 /* ============ timer ============ */
 let timerId=null, timeLeft=0, timeCap=1, totalMs=0;
 function levelTime(lv){ return Math.max(5, 12 - lv*0.4); }   // seconds; floor keeps late levels survivable
@@ -844,6 +895,7 @@ function renderLevel(){
     t.addEventListener("click", ()=>pick(i===oddIdx, t));
     board.appendChild(t);
   }
+  applyObstacles(level);
   startTimer();
 }
 
@@ -854,7 +906,11 @@ function pick(hit, tileEl){
     stopTimer();
     tileEl.classList.add("correct");
     history.push({h:cur.c.h, missed:false});
-    setTimeout(()=>{ level++; locked=false; renderLevel(); }, 280);
+    setTimeout(()=>{
+      level++; locked=false;
+      if(level>MAX_LEVEL) endGame();   // cleared every level — top out at MAX_LEVEL
+      else renderLevel();
+    }, 280);
   }else{
     loseLife();
   }
@@ -929,6 +985,7 @@ function wireShareButtons(txt){
 
 function endGame(){
   stopTimer();
+  clearObstacles();
   gameActive = false;
   const finalScore = Math.max(1, level-1);   // last level completed (floor of 1)
   const pct = percentile(finalScore);
@@ -1202,6 +1259,15 @@ function lbBuildSelect(def){
   if(def && COUNTRIES.some(c=>c[0]===def)) sel.value = def;
 }
 
+/* public streak (🔥) + score-trend (▲/▼) badges for a leaderboard row */
+function lbMeta(e){
+  let h = "";
+  if(e && e.trend==="up")        h += `<span class="lb-trend up" title="Score trending up">▲</span>`;
+  else if(e && e.trend==="down") h += `<span class="lb-trend down" title="Score trending down">▼</span>`;
+  if(e && e.streak>=2)           h += `<span class="lb-streak" title="${e.streak}-day streak">🔥${e.streak}</span>`;
+  return h ? `<span class="lb-meta">${h}</span>` : "";
+}
+
 function lbRows(top, meRank){
   if(!top || !top.length){
     return '<div class="hist-empty">Be the first to finish today — your time sets the bar. 🏁</div>';
@@ -1212,6 +1278,7 @@ function lbRows(top, meRank){
       `<span class="lb-rank">${e.rank}</span>`+
       `<span class="lb-flag">${lbFlag(e.country)}</span>`+
       `<span class="lb-name">${lbEsc(e.name)}</span>`+
+      lbMeta(e)+
       `<span class="lb-score">Lv ${e.level} · ${fmtClock(e.timeMs)}</span>`+
     `</div>`;
   }).join("");
@@ -1236,6 +1303,7 @@ function lbRenderMini(){
       html += `<div class="lb-row lb-me"><span class="lb-rank">${d.me.rank}</span>`+
         `<span class="lb-flag">${lbFlag(lbCountry())}</span>`+
         `<span class="lb-name">You</span>`+
+        lbMeta(d.me)+
         `<span class="lb-score">Lv ${d.me.level} · ${fmtClock(d.me.timeMs)}</span></div>`;
     }
     el.innerHTML = html;
