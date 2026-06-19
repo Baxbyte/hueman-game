@@ -15,10 +15,17 @@ import { buildDailyEmail, type LeaderRow } from "../_lib/email-templates.js";
 // Hobby plan caps function duration; keep the batch within it.
 export const config = { maxDuration: 60 };
 
-// Local hour (0–23) at which a subscriber receives the day's puzzle. The puzzle
-// itself rolls over at 00:00 UTC; we deliver at a friendly local-morning hour so
-// every subscriber gets exactly one nudge per puzzle-day, timed to their zone.
-const SEND_HOUR = Number(process.env.EMAIL_SEND_HOUR ?? 8);
+// Delivery timing. The puzzle rolls over at 00:00 UTC. Two modes, by EMAIL_SEND_HOUR:
+//  • UNSET/empty (default): "drop mode" — send every due subscriber on each
+//    cron fire. Pairs with a once-per-day cron at 00:00 UTC, so mail goes out
+//    the moment the new puzzle drops. Works on the once-daily-cron plan (Hobby).
+//  • Set to 0–23: "local-hour mode" — only send when the subscriber's LOCAL
+//    clock equals that hour, nudging each person in their own morning. Needs an
+//    hourly cron ("0 * * * *", Pro). Flip the schedule in vercel.json and set
+//    EMAIL_SEND_HOUR=8 — no code change needed.
+const RAW_HOUR = process.env.EMAIL_SEND_HOUR;
+const SEND_HOUR: number | null =
+  RAW_HOUR != null && RAW_HOUR.trim() !== "" ? Number(RAW_HOUR) : null;
 
 function authorized(req: VercelRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -87,7 +94,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let skipped = 0;
 
     for (const sub of due) {
-      if (!force && localHour(sub.tz, now) !== SEND_HOUR) {
+      // In local-hour mode, only send when it's the subscriber's local SEND_HOUR.
+      // In drop mode (SEND_HOUR null) send everyone due on this fire.
+      if (!force && SEND_HOUR != null && localHour(sub.tz, now) !== SEND_HOUR) {
         skipped++;
         continue;
       }
@@ -116,7 +125,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    return res.status(200).json({ ok: true, day: DAY, candidates: due.length, sent, errors, skipped, sendHour: SEND_HOUR });
+    return res.status(200).json({
+      ok: true,
+      day: DAY,
+      mode: SEND_HOUR == null ? "drop" : "local-hour",
+      candidates: due.length,
+      sent,
+      errors,
+      skipped,
+      sendHour: SEND_HOUR,
+    });
   } catch (err: any) {
     const unconfigured = err && err.message === "db_not_configured";
     console.error("[daily-send] error:", err);
