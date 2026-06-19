@@ -668,6 +668,13 @@
       <div class="lb-list" id="lbMini"></div>
       <button class="btn ghost" id="lbFull" hidden>See the full board →</button>
     </div>
+    <div class="lb-block" id="emailFormR">
+      <h3 class="lb-title">📬 Never miss a drop</h3>
+      <p class="lb-join-cap">A fresh puzzle lands every day at midnight UTC. We'll email you the moment it drops — timed for your morning.</p>
+      <input class="lb-input" id="subEmailR" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" spellcheck="false">
+      <button class="btn daily-tint" id="btnSubEmailR">Email me when it drops →</button>
+      <p class="lb-join-cap" id="subMsgR" style="margin:8px 0 0" aria-live="polite">Free, one email a day. One-click unsubscribe anytime.</p>
+    </div>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
     <div class="pp-cta">
       <p class="pp-eyebrow">🧩 Brought to you by Puzzle Page</p>
@@ -688,7 +695,14 @@
     <button class="close-x" data-close aria-label="Close">×</button>
     <h2>Never miss a drop</h2>
     <p class="sub">A new puzzle goes live every day at midnight UTC. Pick how you want the nudge:</p>
-    <button class="btn daily-tint" id="btnPush">🔔 Browser alerts on this device</button>
+    <div id="emailForm" style="margin-bottom:12px">
+      <label for="subEmail" style="display:block;font-size:.82rem;font-weight:700;color:var(--text);margin:0 0 6px">📬 Daily email when the new puzzle drops</label>
+      <input class="lb-input" id="subEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" spellcheck="false">
+      <button class="btn daily-tint" id="btnSubEmail" style="margin-bottom:6px">Notify me daily →</button>
+      <p class="fine" id="subMsg" style="margin:0" aria-live="polite">Free, one email a day, timed for your morning. One-click unsubscribe anytime.</p>
+    </div>
+    <p class="fine" style="margin:14px 0 8px;text-align:center;color:var(--muted)">or</p>
+    <button class="btn ghost" id="btnPush">🔔 Browser alerts on this device</button>
     <button class="btn ghost" id="btnCal">📅 Daily calendar reminder (.ics)</button>
     <p class="fine" style="margin-top:14px">The calendar reminder syncs everywhere your calendar does — phone, computer, and email via Google, Apple, or Outlook.</p>
     <div class="pp-cta">
@@ -1392,6 +1406,57 @@ $("lbSave").onclick = ()=>{
   if(lbState.current) lbSubmit(lbState.current.level, lbState.current.timeMs);
 };
 lbFlush();
+
+/* ============ get notified: daily email ============ */
+(function(){
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function tz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; }catch(e){ return "UTC"; } }
+  const forms = [];   // keep cross-form state in sync (signup on one reflects on both)
+
+  function wireEmailForm(inputId, btnId, msgId, source){
+    const input = $(inputId), btn = $(btnId), msg = $(msgId);
+    if(!input || !btn || !msg) return;
+    forms.push({input, msg});
+    const saved = store.get("hm_email");
+    if(saved){ input.value = saved; }
+    if(store.get("hm_email_sub")==="1"){ msg.textContent = "📬 You're on the list — check your inbox to confirm."; }
+
+    async function subscribe(){
+      const email = (input.value||"").trim().toLowerCase();
+      if(!EMAIL_RE.test(email)){ msg.textContent = "Hmm, that doesn't look like an email address."; input.focus(); return; }
+      btn.disabled = true; const old = btn.textContent; btn.textContent = "Sending…";
+      try{
+        const r = await fetch(SITE_URL.replace(/\/$/,"")+"/api/subscribe", {
+          method:"POST", headers:{"content-type":"application/json"},
+          body: JSON.stringify({ email, tz: tz(), source })
+        });
+        const j = await r.json().catch(()=>({}));
+        if(r.ok && j.ok){
+          store.set("hm_email", email); store.set("hm_email_sub","1");
+          const done = j.status==="already_subscribed"
+            ? "✅ You're already subscribed — see you tomorrow!"
+            : "📬 Almost there — tap the confirm link we just emailed you.";
+          // Reflect success on every email form (notify + result screens).
+          forms.forEach(f=>{ f.msg.textContent = done; if(!f.input.value) f.input.value = email; });
+          try{ va('event',{name:'email_subscribe',data:{day:DAY,status:j.status||"ok",src:source}}); }catch(e){}
+        }else if(r.status===429){
+          msg.textContent = "Too many tries — give it a minute and retry.";
+        }else{
+          msg.textContent = "Couldn't sign you up just now. Please try again.";
+        }
+      }catch(e){
+        msg.textContent = "Network hiccup — check your connection and retry.";
+      }finally{
+        btn.disabled = false; btn.textContent = old;
+      }
+    }
+    btn.onclick = subscribe;
+    input.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); subscribe(); } });
+  }
+
+  wireEmailForm("subEmail",  "btnSubEmail",  "subMsg",  "game_notify");   // 🔔 notify overlay
+  wireEmailForm("subEmailR", "btnSubEmailR", "subMsgR", "result_screen"); // "Out of lives" result card
+})();
 
 /* ============ get notified ============ */
 $("btnPush").onclick = async ()=>{
