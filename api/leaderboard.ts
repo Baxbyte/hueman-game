@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getSql, ensureSchema } from "./_lib/db.js";
 import { currentDay } from "./_lib/day.js";
-import { TOP_N, RETENTION_DAYS, rankForScore } from "./_lib/board.js";
+import { TOP_N, RETENTION_DAYS, rankForScore, computeStreakTrend, type Trend } from "./_lib/board.js";
 import { ensureSeeded } from "./_lib/seed.js";
 
 function qInt(v: VercelRequest["query"][string]): number | null {
@@ -38,37 +38,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Top N entries (highest composite score first) with their display meta.
     const rows = (await sql`
-      SELECT name, country, level, time_ms
+      SELECT pid, name, country, level, time_ms
       FROM scores
       WHERE day = ${day}
       ORDER BY score DESC
       LIMIT ${TOP_N}
-    `) as { name: string; country: string; level: number; time_ms: number }[];
+    `) as { pid: string; name: string; country: string; level: number; time_ms: number }[];
 
-    const top = rows.map((r, i) => ({
-      rank: i + 1,
-      name: r.name ?? "Anonymous",
-      country: r.country ?? "ZZ",
-      level: r.level ?? 0,
-      timeMs: r.time_ms ?? 0,
-    }));
+    // Pull each entrant's recent per-day scores once, to derive day-streak and
+    // whether their score is trending up or down vs their previous appearance.
+    const histRows = (await sql`
+      SELECT pid, day, score
+      FROM scores
+      WHERE day <= ${day} AND day > ${day - RETENTION_DAYS}
+    `) as { pid: string; day: number; score: number | string }[];
+
+    const byPid = new Map<string, Map<number, number>>();
+    for (const h of histRows) {
+      let m = byPid.get(h.pid);
+      if (!m) byPid.set(h.pid, (m = new Map()));
+      m.set(h.day, Number(h.score));
+    }
+
+    const streakTrend = (id: string): { streak: number; trend: Trend } =>
+      computeStreakTrend(byPid.get(id) ?? new Map(), day, RETENTION_DAYS);
+
+    const top = rows.map((r, i) => {
+      const st = streakTrend(r.pid);
+      return {
+        rank: i + 1,
+        name: r.name ?? "Anonymous",
+        country: r.country ?? "ZZ",
+        level: r.level ?? 0,
+        timeMs: r.time_ms ?? 0,
+        streak: st.streak,
+        trend: st.trend,
+      };
+    });
 
     const totalRows = (await sql`
       SELECT count(*)::int AS total FROM scores WHERE day = ${day}
     `) as { total: number }[];
     const total = totalRows[0]?.total ?? 0;
 
-    let me: { rank: number; level: number; timeMs: number } | null = null;
+    let me:
+      | { rank: number; level: number; timeMs: number; streak: number; trend: Trend }
+      | null = null;
     if (pid) {
       const meRows = (await sql`
         SELECT score, level, time_ms FROM scores WHERE day = ${day} AND pid = ${pid}
       `) as { score: number; level: number; time_ms: number }[];
       const row = meRows[0];
       if (row) {
+        const st = streakTrend(pid);
         me = {
           rank: await rankForScore(day, Number(row.score)),
           level: row.level ?? 0,
           timeMs: row.time_ms ?? 0,
+          streak: st.streak,
+          trend: st.trend,
         };
       }
     }

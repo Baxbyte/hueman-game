@@ -1,15 +1,20 @@
 import { getSql } from "./db.js";
-import { compositeScore, LEVEL_MAX } from "./board.js";
+import { compositeScore } from "./board.js";
 
 // Realistic "holding" entries so a freshly-rolled day never looks empty for new
-// players. They are inserted lazily and idempotently for whichever day is being
-// viewed or submitted to, so today, the backlog, and every future day stay
-// populated with no maintenance. Real players intermix by score and climb above
-// these over time. Seed rows use a "seed-<day>-<i>" pid, which can never collide
-// with a real player's pid (those must match /^[a-z0-9]{8,40}$/), so they are
-// easy to identify and remove later.
+// players. Inserted lazily and idempotently for whichever day is viewed or
+// submitted to. Real players intermix by score and climb above these over time.
+//
+// Each holder has a STABLE identity across days: pid = "seed-<poolIndex>" (not
+// per-day), so the streak/trend feature treats them like genuine returning
+// players. A holder "plays" ~80% of days (organic streak gaps), with a
+// characteristic skill plus daily variance so scores trend up and down.
+//
+// Seed pids contain a hyphen, so they can never collide with a real player's pid
+// (those must match /^[a-z0-9]{8,40}$/) and are easy to remove later
+// (DELETE FROM scores WHERE pid LIKE 'seed-%').
 
-// A pool of plausible display names + ISO country codes (all in the allowlist).
+// Plausible display names + ISO country codes (all in the allowlist).
 const POOL: ReadonlyArray<readonly [string, string]> = [
   ["Maya", "US"], ["Liam", "GB"], ["Sofia", "BR"], ["Kenji", "JP"],
   ["Aria", "CA"], ["Noah", "DE"], ["Lucas", "FR"], ["Emma", "NL"],
@@ -21,8 +26,11 @@ const POOL: ReadonlyArray<readonly [string, string]> = [
   ["Freya", "NO"], ["Tariq", "SG"],
 ];
 
-// Small, fast, deterministic PRNG so each day's board is stable across requests
-// (no flicker) yet varies day to day.
+// Strongest holder level — deliberately well below the game's cap so skilled
+// real players can always overtake. Independent of LEVEL_MAX on purpose.
+const SEED_TOP_LEVEL = 20;
+const PLAY_PROB = 0.8; // chance a given holder appears on a given day
+
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return function () {
@@ -45,60 +53,60 @@ export type SeedRow = {
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
-/** Deterministic set of holding rows for a given day, ordered best-first. */
+/** Deterministic holding rows for a given day (subset of the pool that "played"). */
 export function seedRowsForDay(day: number): SeedRow[] {
-  const rnd = mulberry32(day * 2654435761 + 12345);
-
-  // Deterministic shuffle of the name pool so leaders differ day to day.
-  const pool = POOL.map((p) => [...p] as [string, string]);
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-
-  const count = 20 + Math.floor(rnd() * 7); // 20–26 holders
-  const now = Date.now();
   const rows: SeedRow[] = [];
-  for (let i = 0; i < count; i++) {
-    const [name, country] = pool[i % pool.length];
-    const frac = count > 1 ? i / (count - 1) : 0; // 0 = top, 1 = bottom
+  for (let pi = 0; pi < POOL.length; pi++) {
+    // Per-(day,player) stream drives whether they played and how well.
+    const rnd = mulberry32((day * 73856093) ^ (pi * 19349663) ^ 0x9e3779b9);
+    if (rnd() > PLAY_PROB) continue; // sat this day out
 
-    // Top holder caps at LEVEL_MAX-5 (~20) so skilled real players can always
-    // overtake; levels taper down the board with a little noise.
-    const level = clamp(
-      Math.round(LEVEL_MAX - 5 - frac * 11 + (rnd() - 0.5) * 2),
-      5,
-      LEVEL_MAX - 3
-    );
-    // Faster times near the top; ~30s..150s with noise.
+    const [name, country] = POOL[pi];
+    // Characteristic skill (stable per player) blended with daily variance, so
+    // a holder's score wobbles up and down day to day around their own level.
+    const baseSkill = mulberry32(pi * 2654435761 + 7)();
+    const skill = clamp(baseSkill * 0.7 + rnd() * 0.3, 0, 1);
+
+    const level = clamp(Math.round(5 + skill * (SEED_TOP_LEVEL - 5)), 4, SEED_TOP_LEVEL);
     const timeMs = clamp(
-      Math.round(30_000 + frac * 120_000 + (rnd() - 0.5) * 18_000),
-      3_000,
-      600_000
+      Math.round(150_000 - skill * 115_000 + (rnd() - 0.5) * 22_000),
+      12_000,
+      300_000
     );
 
     rows.push({
-      pid: `seed-${day}-${i}`,
+      pid: `seed-${pi}`,
       name,
       country,
       level,
       timeMs,
       score: compositeScore(level, timeMs),
-      // Plausible "earlier today" timestamps (not surfaced to clients).
-      ts: now - (count - i) * 90_000,
+      // Deterministic, plausible "played earlier" timestamp (never surfaced).
+      ts: 1_700_000_000_000 + day * 86_400_000 + pi * 137_000,
     });
   }
   return rows;
 }
 
-// Avoid redundant work within a warm function instance; ON CONFLICT keeps it
-// correct across instances and concurrent cold starts regardless.
+// Avoid redundant work within a warm instance; the DB check + ON CONFLICT keep
+// it correct across instances and concurrent cold starts regardless.
 const seededDays = new Set<number>();
 
-/** Idempotently ensure the holding rows exist for `day`. */
+/** Idempotently ensure holding rows exist for `day` (skips if already seeded). */
 export async function ensureSeeded(day: number): Promise<void> {
   if (seededDays.has(day)) return;
   const sql = getSql();
+
+  // If the day already has any holders (incl. an earlier seeding scheme), leave
+  // them as-is — never double-seed.
+  const existing = (await sql`
+    SELECT 1 FROM scores WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1
+  `) as unknown[];
+  if (existing.length) {
+    seededDays.add(day);
+    return;
+  }
+
   const rows = seedRowsForDay(day);
   await sql.transaction(
     rows.map(
