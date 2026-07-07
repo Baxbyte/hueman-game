@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/learn.ts": { "includeFiles": "content/learn/**" },
+    "api/learn-index.ts": { "includeFiles": "content/learn/**" },
+    "api/sitemap.ts": { "includeFiles": "content/learn/**" }
+  },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.huemangame.com" }],
+      "destination": "https://huemangame.com/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    { "source": "/archive", "destination": "/api/archive-index" },
+    { "source": "/archive/:n", "destination": "/api/archive?n=:n" },
+    { "source": "/r/:id", "destination": "/api/r?id=:id" },
+    { "source": "/learn", "destination": "/api/learn-index" },
+    { "source": "/learn/:slug", "destination": "/api/learn?slug=:slug" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+  ]
+}
