@@ -92,38 +92,73 @@ export function seedRowsForDay(day: number): SeedRow[] {
 // it correct across instances and concurrent cold starts regardless.
 const seededDays = new Set<number>();
 
-/** Idempotently ensure holding rows exist for `day` (skips if already seeded). */
+export type Board = "daily" | "overdrive";
+
+/**
+ * Which boards still need holders, given what each already has.
+ *
+ * Deliberately checks the two boards independently. Inferring one board's state
+ * from the other's is what left every pre-existing day with an empty Overdrive
+ * board when that board was introduced: those days already had holders in
+ * `scores`, so seeding short-circuited before `scores_od` was ever considered.
+ * Keeping this per-board means a future third board backfills the same way,
+ * simply by being viewed.
+ */
+export function boardsToSeed(hasDaily: boolean, hasOverdrive: boolean): Board[] {
+  const need: Board[] = [];
+  if (!hasDaily) need.push("daily");
+  if (!hasOverdrive) need.push("overdrive");
+  return need;
+}
+
+/**
+ * Idempotently ensure holding rows exist for `day` on both boards.
+ *
+ * Self-healing: a day whose Overdrive holders are missing gets them the next
+ * time that day is viewed or submitted to, so no separate backfill is needed.
+ */
 export async function ensureSeeded(day: number): Promise<void> {
   if (seededDays.has(day)) return;
   const sql = getSql();
 
-  // If the day already has any holders (incl. an earlier seeding scheme), leave
-  // them as-is — never double-seed.
-  const existing = (await sql`
-    SELECT 1 FROM scores WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1
-  `) as unknown[];
-  if (existing.length) {
+  // Existing holders are never rewritten (they may come from an earlier seeding
+  // scheme); each board is only filled if it has none of its own.
+  const [daily, overdrive] = (await Promise.all([
+    sql`SELECT 1 FROM scores    WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1`,
+    sql`SELECT 1 FROM scores_od WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1`,
+  ])) as unknown[][];
+
+  const need = boardsToSeed(daily.length > 0, overdrive.length > 0);
+  if (!need.length) {
     seededDays.add(day);
     return;
   }
 
   const rows = seedRowsForDay(day);
-  await sql.transaction(
-    rows.flatMap((r) => [
-      sql`
-        INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
-        VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, ${r.ts})
-        ON CONFLICT (day, pid) DO NOTHING
-      `,
-      // Holders appear on Overdrive too, with a single unboosted run — the same
-      // rule real free players get, so an empty Overdrive board never greets a
-      // player who just spent credits.
-      sql`
-        INSERT INTO scores_od (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
-        VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, 1, false, ${r.ts})
-        ON CONFLICT (day, pid) DO NOTHING
-      `,
-    ])
-  );
+  const statements = rows.flatMap((r) => [
+    ...(need.includes("daily")
+      ? [
+          sql`
+            INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
+            VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, ${r.ts})
+            ON CONFLICT (day, pid) DO NOTHING
+          `,
+        ]
+      : []),
+    // Holders appear on Overdrive too, with a single unboosted run — the same
+    // rule real free players get, so an empty Overdrive board never greets a
+    // player who just spent credits.
+    ...(need.includes("overdrive")
+      ? [
+          sql`
+            INSERT INTO scores_od (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
+            VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, 1, false, ${r.ts})
+            ON CONFLICT (day, pid) DO NOTHING
+          `,
+        ]
+      : []),
+  ]);
+
+  if (statements.length) await sql.transaction(statements);
   seededDays.add(day);
 }
