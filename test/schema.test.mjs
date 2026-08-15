@@ -115,7 +115,38 @@ check("Overdrive: a free single run can top the board", top[0].pid === "freebie1
 const rank = await q(`SELECT count(*)::int better FROM scores_od WHERE day=66 AND score > ${18 * 1e7 - 80}`);
 check("rank: Overdrive rank counts better scores", rank[0].better + 1 === 2, `rank=${rank[0].better + 1}`);
 
-/* ---- 7. run rows are unique per attempt (no token replay minting) ---- */
+/* ---- 7. backfilling Overdrive holders leaves the Daily board alone ----
+   Reproduces the pre-deploy state: a day already seeded into `scores` before
+   scores_od existed. Seeding Overdrive for that day must fill it without
+   rewriting any Daily row. */
+await q(`INSERT INTO scores (day,pid,name,country,level,time_ms,score,ts)
+         VALUES (65,'seed-0','Maya','US',14,80000,${14 * 1e7 - 80},0),
+                (65,'seed-1','Liam','GB',9,120000,${9 * 1e7 - 120},0)`);
+await q(`INSERT INTO scores (day,pid,name,country,level,time_ms,score,ts)
+         VALUES (65,'realplayer',  'Ada','US',22,50000,${22 * 1e7 - 50},0)`);
+
+const hasDaily = await q(`SELECT 1 FROM scores    WHERE day=65 AND pid LIKE 'seed-%' LIMIT 1`);
+const hasOd = await q(`SELECT 1 FROM scores_od WHERE day=65 AND pid LIKE 'seed-%' LIMIT 1`);
+check("backfill: the stale day is detected as Daily-seeded, Overdrive-empty",
+  hasDaily.length === 1 && hasOd.length === 0);
+
+for (const [pid, name, cc, lv, ms] of [["seed-0", "Maya", "US", 14, 80000], ["seed-1", "Liam", "GB", 9, 120000]]) {
+  await q(
+    `INSERT INTO scores_od (day,pid,name,country,level,time_ms,score,runs,boosted,ts)
+     VALUES (65,$1,$2,$3,$4,$5,$6,1,false,0) ON CONFLICT (day,pid) DO NOTHING`,
+    [pid, name, cc, lv, ms, lv * 1e7 - ms / 1000]
+  );
+}
+const odBackfilled = await q(`SELECT count(*)::int c FROM scores_od WHERE day=65`);
+const dailyIntact = await q(`SELECT level, name FROM scores WHERE day=65 AND pid='realplayer'`);
+const dailyCount = await q(`SELECT count(*)::int c FROM scores WHERE day=65`);
+check("backfill: Overdrive gets its holders", odBackfilled[0].c === 2, `rows=${odBackfilled[0].c}`);
+check(
+  "backfill: no Daily row is added or rewritten",
+  dailyCount[0].c === 3 && dailyIntact[0].level === 22 && dailyIntact[0].name === "Ada"
+);
+
+/* ---- 8. run rows are unique per attempt (no token replay minting) ---- */
 await q(`INSERT INTO runs (day,pid,n,lives,time_mult,used,ts) VALUES (66,'player01',1,4,140,false,0)`);
 let dup = false;
 try {
