@@ -2,6 +2,12 @@
   "name": "hueman-game",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "npm run test:schema && npm run test:signatures",
+    "test:schema": "node test/schema.test.mjs .",
+    "test:signatures": "node --experimental-strip-types test/signatures.test.mjs",
+    "typecheck": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext --target es2022 --lib es2023,dom --skipLibCheck api/*.ts api/_lib/*.ts"
+  },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "@vercel/analytics": "^2.0.1",

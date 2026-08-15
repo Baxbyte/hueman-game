@@ -432,6 +432,92 @@
   footer a,.card a{color:var(--daily);text-decoration:none;font-weight:600}
   footer a:hover,.card a:hover{text-decoration:underline}
 
+  /* ---------- board tabs (Daily / Overdrive) ---------- */
+  .lb-tabs{display:flex;gap:6px;margin:0 0 10px}
+  .lb-tab{
+    flex:1;padding:8px 6px;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface);
+    color:var(--muted);font-size:.78rem;font-weight:700;text-align:center;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .lb-tab[aria-selected="true"]{
+    color:var(--text);border-color:var(--daily);
+    background:color-mix(in srgb,var(--daily) 16%,transparent);
+  }
+  .lb-tab:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
+  .lb-note{font-size:.75rem;color:var(--muted);line-height:1.45;margin:0 0 10px}
+  .lb-runs{
+    color:var(--muted);font-weight:700;font-size:.74rem;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+
+  /* ---------- overdrive / credits ---------- */
+  .od-block{
+    margin:18px 0 4px;padding:16px;
+    background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+  }
+  .od-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 6px}
+  .od-title{font-size:1rem;font-weight:700;color:var(--text);margin:0}
+  .od-bal{font-size:.8rem;font-weight:700;color:var(--daily);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .od-sub{font-size:.8rem;color:var(--muted);line-height:1.5;margin:0 0 12px}
+  .od-opts{display:flex;flex-direction:column;gap:7px;margin:0 0 12px}
+  .od-opt{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:12px;
+    border:1px solid var(--line);background:var(--surface);
+    font-size:.85rem;cursor:pointer;
+  }
+  .od-opt input{accent-color:var(--daily);width:16px;height:16px;flex:none;cursor:pointer}
+  .od-opt span{flex:1}
+  .od-opt em{font-style:normal;color:var(--muted);font-size:.78rem;font-weight:700;white-space:nowrap}
+  .od-opt.on{border-color:var(--daily)}
+  .od-links{
+    display:flex;justify-content:center;gap:10px;align-items:center;
+    margin-top:10px;font-size:.8rem;color:var(--muted);
+  }
+  .od-links button{color:var(--muted);font-size:.8rem;font-weight:600;padding:4px}
+  .od-links button:hover{color:var(--text);text-decoration:underline}
+  .od-links button:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
+  .od-free{
+    font-size:.78rem;color:var(--text);line-height:1.45;margin:0 0 10px;
+    padding:9px 11px;border-radius:10px;
+    background:color-mix(in srgb,var(--daily) 14%,transparent);
+  }
+
+  /* ---------- credit store ---------- */
+  .pack-grid{display:flex;flex-direction:column;gap:8px;margin:4px 0 14px}
+  .pack{
+    display:flex;align-items:center;gap:12px;width:100%;
+    padding:13px 14px;border-radius:14px;text-align:left;
+    border:1px solid var(--line);background:var(--surface-2);
+    transition:border-color .15s,transform .12s ease;
+  }
+  .pack:hover{border-color:var(--muted)}
+  .pack:active{transform:scale(.99)}
+  .pack:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
+  .pack.hero{border-color:var(--daily)}
+  .pack-main{flex:1;min-width:0;display:block}
+  .pack-name{display:block;font-size:.95rem;font-weight:700;color:var(--text)}
+  .pack-blurb{display:block;font-size:.76rem;color:var(--muted);margin-top:2px}
+  .pack-badge{
+    display:inline-block;margin-left:7px;padding:2px 7px;border-radius:99px;
+    font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+    background:var(--daily);color:#fff;vertical-align:middle;
+  }
+  .pack-price{
+    font-size:1.05rem;font-weight:800;color:var(--text);white-space:nowrap;
+    font-variant-numeric:tabular-nums;text-align:right;
+  }
+  .pack-each{display:block;font-size:.68rem;font-weight:600;color:var(--muted);margin-top:2px}
+  .restore-box{
+    margin-top:6px;padding:13px 14px;border-radius:14px;
+    border:1px solid var(--line);background:var(--surface-2);
+  }
+  .restore-code{
+    font-family:ui-monospace,monospace;font-size:1.05rem;font-weight:700;
+    letter-spacing:.08em;color:var(--text);
+  }
+
   /* ---------- product hunt support ---------- */
   .ph-support{
     margin:18px 0 4px;padding:14px 14px 12px;
@@ -539,7 +625,12 @@
 
     <div class="faq-item">
       <h3 class="faq-q">Is HUEMAN free?</h3>
-      <div class="faq-a"><p>Yes — completely free, forever, in your browser. HUEMAN is a <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">Puzzle Page</a> game: discover more daily puzzle games, or build and publish your own, at <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">puzzlepage.app</a>.</p></div>
+      <div class="faq-a"><p>Yes — the daily puzzle is completely free, forever, in your browser, with no account and no ads. There's one optional extra: <b>credits</b>, which buy additional runs at the same day's puzzle. Those extra runs compete on a separate <b>Overdrive</b> board, so nothing you can buy affects the main daily leaderboard. HUEMAN is a <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">Puzzle Page</a> game: discover more daily puzzle games, or build and publish your own, at <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">puzzlepage.app</a>.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <h3 class="faq-q">What is the Overdrive board?</h3>
+      <div class="faq-a"><p>HUEMAN has two daily leaderboards. The <b>Daily</b> board ranks everyone's first run of the day — three lives, standard clock, no assistance — and once your run is filed it can never be changed, by you or by anyone paying for anything. The <b>Overdrive</b> board ranks your best run of the day however many you take, and every free player is entered on it automatically with their single run. Credits buy more attempts at the same puzzle everyone else got, plus optional handicaps like an extra life or a slower clock. They never make the odd tile easier to see.</p></div>
     </div>
 
     <div class="faq-item">
@@ -685,6 +776,11 @@
     </div>
     <div class="lb-block" id="resLeader">
       <h3 class="lb-title">🌍 Today's leaderboard</h3>
+      <div class="lb-tabs" role="tablist" aria-label="Leaderboard">
+        <button class="lb-tab" role="tab" data-mini-board="daily" aria-selected="true">🌍 Daily</button>
+        <button class="lb-tab" role="tab" data-mini-board="overdrive" aria-selected="false">⚡ Overdrive</button>
+      </div>
+      <p class="lb-note" id="lbMiniNote"></p>
       <div id="lbJoin" hidden>
         <p class="lb-join-cap">Add your name to today's global board — see how your eyes rank against the world.</p>
         <input class="lb-input" id="lbName" type="text" maxlength="16" placeholder="Your name" autocomplete="off" spellcheck="false">
@@ -694,6 +790,27 @@
       <p class="lb-as" id="lbAs" hidden></p>
       <div class="lb-list" id="lbMini"></div>
       <button class="btn ghost" id="lbFull" hidden>See the full board →</button>
+    </div>
+    <!-- OVERDRIVE: optional paid extra runs. Hidden until the player's free run
+         is filed, and never required — the daily game above is complete without it. -->
+    <div class="od-block" id="odBlock" hidden>
+      <div class="od-head">
+        <h3 class="od-title">⚡ Overdrive — go again</h3>
+        <span class="od-bal" id="odBal"></span>
+      </div>
+      <p class="od-sub" id="odSub"></p>
+      <p class="od-free" id="odFree" hidden></p>
+      <div class="od-opts">
+        <label class="od-opt" id="odOptLife1"><input type="checkbox" id="odLife1"><span>+1 life — start with 4</span><em id="odCostLife1"></em></label>
+        <label class="od-opt" id="odOptLife2"><input type="checkbox" id="odLife2"><span>+2 lives — start with 5</span><em id="odCostLife2"></em></label>
+        <label class="od-opt" id="odOptSlow"><input type="checkbox" id="odSlow"><span>Slow clock — 40% more time each level</span><em id="odCostSlow"></em></label>
+      </div>
+      <button class="btn daily-tint" id="odGo">Run again</button>
+      <div class="od-links">
+        <button id="odStore">Get credits</button>
+        <span aria-hidden="true">·</span>
+        <button id="odWhat">What's Overdrive?</button>
+      </div>
     </div>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
     <div class="pp-cta">
@@ -736,9 +853,48 @@
     <button class="close-x" data-close aria-label="Close">×</button>
     <h2>🌍 Daily leaderboard</h2>
     <p class="sub" id="lbSub">Today's sharpest eyes worldwide.</p>
+    <div class="lb-tabs" role="tablist" aria-label="Leaderboard">
+      <button class="lb-tab" role="tab" data-full-board="daily" aria-selected="true">🌍 Daily</button>
+      <button class="lb-tab" role="tab" data-full-board="overdrive" aria-selected="false">⚡ Overdrive</button>
+    </div>
+    <p class="lb-note" id="lbFullNote"></p>
     <div class="lb-list" id="lbList"></div>
     <p class="fine" style="margin-top:14px">Everyone plays the same puzzle each day — finish today's to claim your spot. Rankings reset at midnight UTC.</p>
     <button class="btn ghost" data-close>Back</button>
+  </div>
+</div>
+
+<!-- CREDIT STORE -->
+<div class="overlay" id="ovStore" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>⚡ Credits</h2>
+    <p class="sub">Credits buy extra runs at today's puzzle on the Overdrive board. The daily game stays free, forever — this is strictly seconds.</p>
+    <p class="od-free" id="storeBal"></p>
+    <div class="pack-grid" id="packGrid"></div>
+    <p class="fine" id="storeClosed" hidden>Credit top-ups aren't switched on yet. Your free credits still work — go spend them.</p>
+    <p class="fine">One-time payment, no subscription, no account. Credits never expire. Payments are handled by Stripe; HUEMAN never sees your card.</p>
+    <div class="restore-box">
+      <p class="fine" style="margin-bottom:6px">Your credits live in this browser. Save this code to move them to another device — or if you ever clear site data.</p>
+      <p class="restore-code" id="restoreCode">—</p>
+      <input class="lb-input" id="restoreIn" type="text" maxlength="9" placeholder="Paste a code to restore" autocomplete="off" spellcheck="false" style="margin-top:10px">
+      <button class="btn ghost" id="restoreGo" style="margin-top:0">Restore credits</button>
+    </div>
+    <button class="btn ghost" data-close>Back</button>
+  </div>
+</div>
+
+<!-- WHAT IS OVERDRIVE -->
+<div class="overlay" id="ovOd" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>⚡ What's Overdrive?</h2>
+    <p class="sub">Two boards, one puzzle. Here's the honest version.</p>
+    <p><b>🌍 Daily</b> is your first run of the day, exactly as you played it — three lives, standard clock, no help. It's filed the moment you finish and <b>nothing can change it</b>. No credit, boost or purchase can put a row on this board or move one.</p>
+    <p><b>⚡ Overdrive</b> is your best run of the day, however many you take. Your free run is already on it — if it's good enough, you can top Overdrive without spending a thing.</p>
+    <p>Credits buy extra attempts at the <b>same puzzle everyone else got</b>, plus optional handicaps on those attempts. They don't make tiles easier to see, and they can't touch the Daily board.</p>
+    <p class="fine">Every new player gets free credits, so your first extra run costs nothing. If you never buy any, you lose access to precisely nothing.</p>
+    <button class="btn daily-tint" data-close>Got it</button>
   </div>
 </div>
 
@@ -830,6 +986,9 @@ function resultUrl(day, level, grid){
 
 /* ============ state ============ */
 let rng, level, lives, locked, practice=false, gameActive=false;
+/* Overdrive: a credit-funded extra run carries a server-signed token plus the
+   handicaps it paid for. Null for the free daily run, which is never modified. */
+let maxLives = 3, timeMult = 1, activeRun = null;
 let history = [];   // {h, missed}
 let cur = null;     // current level: {c, oddIdx}
 const $ = id => document.getElementById(id);
@@ -880,7 +1039,9 @@ function applyObstacles(lv){
 
 /* ============ timer ============ */
 let timerId=null, timeLeft=0, timeCap=1, totalMs=0;
-function levelTime(lv){ return Math.max(5, 12 - lv*0.4); }   // seconds; floor keeps late levels survivable
+/* seconds; floor keeps late levels survivable. timeMult is 1 for every free run
+   and only rises on an Overdrive run that bought the slow clock. */
+function levelTime(lv){ return Math.max(5, 12 - lv*0.4) * timeMult; }
 function overlayOpen(){
   return !$("ovStart").hidden || !$("ovHelp").hidden || !$("ovStats").hidden || !$("ovNotify").hidden;
 }
@@ -912,13 +1073,26 @@ function fmtClock(ms){
   return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
 }
 
-function freshGame(isPractice){
+/* `run` is present only for a paid Overdrive attempt: {token, lives, timeMult, n}.
+   Called with no run — every free and practice game — this behaves exactly as
+   it always has: three lives, standard clock, today's seed. */
+function freshGame(isPractice, run){
   practice = !!isPractice;
+  activeRun = run || null;
   gameActive = true;
   rng = practice ? mulberry32(Date.now()&0xffffffff) : mulberry32(DAY*7919+13);
-  level=1; lives=3; locked=false; history=[]; totalMs=0;
-  $("prompt").textContent = practice ? "Practice — tap the odd shade out" : "Tap the odd shade out";
+  maxLives = activeRun ? activeRun.lives : 3;
+  timeMult = activeRun ? activeRun.timeMult : 1;
+  level=1; lives=maxLives; locked=false; history=[]; totalMs=0;
+  $("prompt").textContent = practice ? "Practice — tap the odd shade out"
+    : activeRun ? "⚡ Overdrive run — tap the odd shade out"
+    : "Tap the odd shade out";
   renderLevel();
+}
+
+/* ●/○ pips, sized to however many lives this run started with. */
+function renderLives(){
+  $("lives").textContent = "●".repeat(Math.max(0,lives)) + "○".repeat(Math.max(0,maxLives-lives));
 }
 
 function renderLevel(){
@@ -928,7 +1102,7 @@ function renderLevel(){
   cur = {c, oddIdx};
   if(!practice && level===1) root.style.setProperty("--daily", `hsl(${c.h} 70% 55%)`);
   $("levelNum").textContent = level;
-  $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
+  renderLives();
   board.style.gridTemplateColumns = `repeat(${n},1fr)`;
   board.innerHTML = "";
   board.classList.remove("board-shake");
@@ -971,7 +1145,7 @@ function loseLife(){
   board.classList.add("board-shake");
   const odd = board.children[cur.oddIdx];
   if(odd) odd.classList.add("reveal");
-  $("lives").textContent = "●".repeat(lives)+"○".repeat(3-lives);
+  renderLives();
   setTimeout(()=>{
     if(lives<=0){ endGame(); }
     else { locked=false; renderLevel(); }
@@ -987,9 +1161,10 @@ function shareGrid(){
   }
   return out.trim();
 }
-function shareText(score, ms, grid){
+function shareText(score, ms, grid, od){
   const url = resultUrl(DAY, score, grid)+"?utm_source=share";
-  return `HUEMAN #${DAY} 🎨\nLevel ${score} in ${fmtClock(ms)} · Top ${100-percentile(score)}%\n\n${grid}\n\nThink your eyes are sharper? ${url}`;
+  const tag = od ? " ⚡Overdrive" : "";
+  return `HUEMAN #${DAY} 🎨${tag}\nLevel ${score} in ${fmtClock(ms)} · Top ${100-percentile(score)}%\n\n${grid}\n\nThink your eyes are sharper? ${url}`;
 }
 
 /* wire the big share button (native sheet on mobile) + per-platform buttons.
@@ -1035,15 +1210,21 @@ function endGame(){
   stopTimer();
   clearObstacles();
   gameActive = false;
+  const run = activeRun;            // set only for a paid Overdrive attempt
+  activeRun = null;
   const finalScore = Math.max(1, level-1);   // last level completed (floor of 1)
   const pct = percentile(finalScore);
   const grid = shareGrid();
 
-  $("resTitle").textContent = practice ? "Practice over" : (pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Out of lives!");
+  $("resTitle").textContent = practice ? "Practice over"
+    : run ? (pct>=90 ? "Superhueman. ⚡" : "Overdrive run "+run.n)
+    : (pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Out of lives!");
   $("resLevel").textContent = "Level "+finalScore;
-  $("resPct").textContent = practice ? "Practice rounds aren't ranked" : `Sharper than ~${pct}% of players (est.)`;
+  $("resPct").textContent = practice ? "Practice rounds aren't ranked"
+    : run ? `⚡ Filed on Overdrive · sharper than ~${pct}% of players (est.)`
+    : `Sharper than ~${pct}% of players (est.)`;
   $("resTime").textContent = `⏱ ${fmtClock(totalMs)} on the clock`;
-  $("spHead").textContent = `HUEMAN #${DAY} · Level ${finalScore} · ${fmtClock(totalMs)} · Top ${100-pct}%`;
+  $("spHead").textContent = `HUEMAN #${DAY}${run?" ⚡":""} · Level ${finalScore} · ${fmtClock(totalMs)} · Top ${100-pct}%`;
   $("spGrid").textContent = grid;
   const showShare = practice ? "none" : "";
   $("btnShare").style.display = showShare;
@@ -1052,13 +1233,21 @@ function endGame(){
   $("resLeader").hidden = practice;
 
   if(!practice){
-    saveResult(finalScore, grid);
+    // Streak, stats and the day's canonical history entry all belong to the
+    // free run. An Overdrive attempt records its own best and nothing else, so
+    // paying can never inflate a streak or rewrite the day's result.
+    if(run) saveOdBest(finalScore, totalMs, grid);
+    else saveResult(finalScore, grid);
     syncStartCard();
-    wireShareButtons(shareText(finalScore, totalMs, grid), resultUrl(DAY, finalScore, grid));
-    try{ va('event',{name:'game_complete',data:{day:DAY,level:finalScore}}); }catch(e){}
-    lbState.current = { level: finalScore, timeMs: totalMs };
+    wireShareButtons(shareText(finalScore, totalMs, grid, !!run), resultUrl(DAY, finalScore, grid));
+    try{ va('event',{name: run?'overdrive_complete':'game_complete',data:{day:DAY,level:finalScore,run:run?run.n:0}}); }catch(e){}
+    lbState.current = { level: finalScore, timeMs: totalMs, token: run ? run.token : null };
+    lbMiniBoard = run ? "overdrive" : "daily";
     lbMountResult();
-    lbSubmit(finalScore, totalMs);
+    lbSubmit(finalScore, totalMs, run ? run.token : null);
+    odMount();
+  }else{
+    $("odBlock").hidden = true;
   }
   tickCountdown();
   $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
@@ -1068,21 +1257,26 @@ function endGame(){
 function showSavedResult(){
   const e = loadHist()[DAY];
   if(!e) return;
+  practice = false;                 // this screen is always the ranked result
   const pct = e.p;
+  const od = loadOd()[DAY];
   $("resTitle").textContent = pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Today's result";
   $("resLevel").textContent = "Level "+e.l;
-  $("resPct").textContent = `Sharper than ~${pct}% of players (est.)`;
+  $("resPct").textContent = od && od.l > e.l
+    ? `Sharper than ~${pct}% of players (est.) · ⚡ Overdrive best: Level ${od.l}`
+    : `Sharper than ~${pct}% of players (est.)`;
   $("resTime").textContent = `⏱ ${fmtClock(e.t)} on the clock`;
   $("spHead").textContent = `HUEMAN #${DAY} · Level ${e.l} · ${fmtClock(e.t)} · Top ${100-pct}%`;
   $("spGrid").textContent = e.g;
   $("btnShare").style.display = "";
   document.querySelector(".share-row").style.display = "";
-  wireShareButtons(shareText(e.l, e.t, e.g), resultUrl(DAY, e.l, e.g));
+  wireShareButtons(shareText(e.l, e.t, e.g, false), resultUrl(DAY, e.l, e.g));
   $("ovResult").hidden = false;
   $("resLeader").hidden = false;
-  lbState.current = { level: e.l, timeMs: e.t };
+  lbState.current = { level: e.l, timeMs: e.t, token: null };
   lbMountResult();
-  lbSubmit(e.l, e.t);
+  lbSubmit(e.l, e.t, null);
+  odMount();
   tickCountdown();
   $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
 }
@@ -1101,6 +1295,20 @@ function saveResult(score, grid){
   const hist = loadHist();
   hist[DAY] = { l:score, t:Math.round(totalMs), p:percentile(score), g:grid };
   saveHist(hist);
+}
+
+/* Overdrive bests are kept apart from hm_hist so the Statistics screen, the
+   streak and the shareable daily result all keep describing the free run. */
+function loadOd(){
+  try{ return JSON.parse(store.get("hm_od")||"{}") || {}; }catch(e){ return {}; }
+}
+function saveOdBest(score, ms, grid){
+  const all = loadOd();
+  const prev = all[DAY];
+  if(!prev || score > prev.l || (score === prev.l && ms < prev.t)){
+    all[DAY] = { l:score, t:Math.round(ms), g:grid };
+    store.set("hm_od", JSON.stringify(all));
+  }
 }
 
 /* ============ countdown ============ */
@@ -1236,6 +1444,12 @@ $("btnNotify").onclick = ()=> $("ovNotify").hidden=false;
 /* ============ leaderboard ============ */
 const LB_MINI = 10;
 const lbState = { geo:"", current:null };
+/* Which board each list is showing. Daily is always the default view. */
+let lbMiniBoard = "daily", lbFullBoard = "daily";
+const LB_NOTE = {
+  daily: "First run only — three lives, standard clock. Credits can't touch this board.",
+  overdrive: "Best run of the day, extra runs included. Your free run is already here."
+};
 const COUNTRIES = [
   ["AF","Afghanistan"],["AL","Albania"],["DZ","Algeria"],["AD","Andorra"],["AO","Angola"],
   ["AG","Antigua & Barbuda"],["AR","Argentina"],["AM","Armenia"],["AU","Australia"],["AT","Austria"],
@@ -1316,6 +1530,12 @@ function lbMeta(e){
   return h ? `<span class="lb-meta">${h}</span>` : "";
 }
 
+/* Attempt count, shown on Overdrive only — it's the one number that makes the
+   difference between a one-shot run and a bought-in one visible to everyone. */
+function lbRuns(e){
+  return e && e.runs > 1 ? `<span class="lb-runs" title="${e.runs} runs today">⚡${e.runs}</span>` : "";
+}
+
 function lbRows(top, meRank){
   if(!top || !top.length){
     return '<div class="hist-empty">Be the first to finish today — your time sets the bar. 🏁</div>';
@@ -1326,23 +1546,35 @@ function lbRows(top, meRank){
       `<span class="lb-rank">${e.rank}</span>`+
       `<span class="lb-flag">${lbFlag(e.country)}</span>`+
       `<span class="lb-name">${lbEsc(e.name)}</span>`+
+      lbRuns(e)+
       lbMeta(e)+
       `<span class="lb-score">Lv ${e.level} · ${fmtClock(e.timeMs)}</span>`+
     `</div>`;
   }).join("");
 }
 
-function lbFetch(){
+function lbFetch(board){
   const pid = store.get("hm_pid")||"";
-  return fetch(`/api/leaderboard?day=${DAY}${pid?`&pid=${encodeURIComponent(pid)}`:""}`)
+  return fetch(`/api/leaderboard?day=${DAY}&board=${board||"daily"}${pid?`&pid=${encodeURIComponent(pid)}`:""}`)
     .then(r=>{ if(!r.ok) throw new Error("lb"); return r.json(); });
+}
+
+/* Keep a tab strip's selected state in sync with the board it controls. */
+function lbSyncTabs(which, board){
+  document.querySelectorAll(`[data-${which}-board]`).forEach(t=>{
+    t.setAttribute("aria-selected", String(t.getAttribute(`data-${which}-board`) === board));
+  });
 }
 
 function lbRenderMini(){
   const el = $("lbMini");
+  const board = lbMiniBoard;
+  lbSyncTabs("mini", board);
+  $("lbMiniNote").textContent = LB_NOTE[board];
   el.innerHTML = '<div class="hist-empty">Loading today\'s board…</div>';
   $("lbFull").hidden = true;
-  lbFetch().then(d=>{
+  lbFetch(board).then(d=>{
+    if(lbMiniBoard !== board) return;   // a tab was switched mid-flight
     lbState.geo = d.geo || lbState.geo;
     if(!lbJoined() && !lbCountry() && lbState.geo) lbBuildSelect(lbState.geo);
     const top = (d.top||[]).slice(0, LB_MINI);
@@ -1351,6 +1583,7 @@ function lbRenderMini(){
       html += `<div class="lb-row lb-me"><span class="lb-rank">${d.me.rank}</span>`+
         `<span class="lb-flag">${lbFlag(lbCountry())}</span>`+
         `<span class="lb-name">You</span>`+
+        lbRuns(d.me)+
         lbMeta(d.me)+
         `<span class="lb-score">Lv ${d.me.level} · ${fmtClock(d.me.timeMs)}</span></div>`;
     }
@@ -1373,9 +1606,12 @@ function lbMountResult(){
   lbRenderMini();
 }
 
-function lbSubmit(level, timeMs){
+/* `token` is the signed proof of a paid Overdrive run; without it the server
+   files the result on the Daily board (and only ever the first time). */
+function lbSubmit(level, timeMs, token){
   if(!lbJoined()) return;            // wait until the player has joined
   const payload = { pid: lbPid(), name: lbName(), country: lbCountry(), level: Math.round(level), timeMs: Math.max(0, Math.round(timeMs)), day: DAY };
+  if(token) payload.token = token;
   fetch("/api/score", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)})
     .then(r=>{
       if(r.status===409) return null;       // day rolled over — drop
@@ -1414,12 +1650,16 @@ function lbFlush(){
 }
 
 function lbOpenFull(silent){
+  const board = lbFullBoard;
   $("ovLeader").hidden = false;
+  lbSyncTabs("full", board);
+  $("lbFullNote").textContent = LB_NOTE[board];
   if(!silent){
     $("lbList").innerHTML = '<div class="hist-empty">Loading…</div>';
-    try{ va('event',{name:'leaderboard_view',data:{day:DAY}}); }catch(e){}
+    try{ va('event',{name:'leaderboard_view',data:{day:DAY,board}}); }catch(e){}
   }
-  lbFetch().then(d=>{
+  lbFetch(board).then(d=>{
+    if(lbFullBoard !== board) return;   // a tab was switched mid-flight
     lbState.geo = d.geo || lbState.geo;
     const total = d.total||0;
     $("lbSub").textContent = total ? `${total} player${total===1?"":"s"} so far today · sharpest eyes worldwide` : "Today's sharpest eyes worldwide.";
@@ -1427,8 +1667,15 @@ function lbOpenFull(silent){
   }).catch(()=>{ $("lbList").innerHTML = '<div class="hist-empty">Couldn\'t load the leaderboard — check your connection and try again.</div>'; });
 }
 
+document.querySelectorAll("[data-mini-board]").forEach(t=>{
+  t.onclick = ()=>{ lbMiniBoard = t.getAttribute("data-mini-board"); lbRenderMini(); };
+});
+document.querySelectorAll("[data-full-board]").forEach(t=>{
+  t.onclick = ()=>{ lbFullBoard = t.getAttribute("data-full-board"); lbOpenFull(false); };
+});
+
 $("btnLeader").onclick = ()=>lbOpenFull(false);
-$("lbFull").onclick = ()=>lbOpenFull(false);
+$("lbFull").onclick = ()=>{ lbFullBoard = lbMiniBoard; lbOpenFull(false); };
 $("lbSave").onclick = ()=>{
   const nm = ($("lbName").value||"").trim().slice(0,16);
   const co = $("lbCountry").value||"";
@@ -1437,9 +1684,243 @@ $("lbSave").onclick = ()=>{
   store.set("hm_country", co);
   try{ va('event',{name:'leaderboard_join',data:{day:DAY,country:co}}); }catch(e){}
   lbMountResult();
-  if(lbState.current) lbSubmit(lbState.current.level, lbState.current.timeMs);
+  if(lbState.current) lbSubmit(lbState.current.level, lbState.current.timeMs, lbState.current.token);
 };
 lbFlush();
+
+/* ============ credits & Overdrive ============================================
+   Everything below is additive. If the wallet endpoint is unreachable, the
+   store never opens, the Overdrive card stays hidden, and the game is exactly
+   the free daily puzzle it was before.
+============================================================================ */
+const CR = {
+  loaded:false, credits:0, restore:"", storeOpen:false,
+  packs:[], spend:null, rules:{ baseLives:3, maxLives:5, slowClockMult:1.4, welcomeCredits:3 }
+};
+
+function crApply(d){
+  if(!d || typeof d.credits !== "number") return false;
+  CR.loaded = true;
+  CR.credits = d.credits;
+  CR.restore = d.restore || CR.restore;
+  CR.storeOpen = !!d.storeOpen;
+  if(Array.isArray(d.packs)) CR.packs = d.packs;
+  if(d.spend) CR.spend = d.spend;
+  if(d.rules) CR.rules = d.rules;
+  return true;
+}
+
+function crFetch(){
+  return fetch(`/api/wallet?pid=${encodeURIComponent(lbPid())}`)
+    .then(r=>{ if(!r.ok) throw new Error("wallet"); return r.json(); })
+    .then(d=>{ crApply(d); return d; });
+}
+
+function crMoney(cents){
+  return "$" + (cents/100).toFixed(2);
+}
+function crPlural(n, word){ return n + " " + word + (n===1?"":"s"); }
+
+/* ---- the Overdrive offer (result screen) ---- */
+function odCost(){
+  const s = CR.spend;
+  if(!s) return 0;
+  const extraLives = $("odLife2").checked ? 2 : ($("odLife1").checked ? 1 : 0);
+  return s.rerun.credits + extraLives*s.life.credits + ($("odSlow").checked ? s.slowclock.credits : 0);
+}
+
+function odRefresh(){
+  if(!CR.spend) return;
+  const cost = odCost();
+  const canPay = CR.credits >= cost;
+  $("odBal").textContent = crPlural(CR.credits, "credit");
+  $("odGo").textContent = canPay
+    ? `Run again — ${crPlural(cost, "credit")}`
+    : (CR.storeOpen ? `Get credits — need ${cost}, you have ${CR.credits}` : `Not enough credits (need ${cost})`);
+  $("odGo").disabled = !canPay && !CR.storeOpen;
+  $("odGo").style.opacity = ($("odGo").disabled) ? ".55" : "";
+  ["odOptLife1","odOptLife2","odOptSlow"].forEach((id,i)=>{
+    const inp = [$("odLife1"),$("odLife2"),$("odSlow")][i];
+    $(id).classList.toggle("on", inp.checked);
+  });
+  // Only claim "free" while the player is still on the welcome grant — once
+  // they've bought credits, spending them isn't free and shouldn't say so.
+  const spent = store.get("hm_spent")==="1";
+  const free = !spent && cost > 0 && CR.credits >= cost && CR.credits <= (CR.rules.welcomeCredits||0);
+  $("odFree").hidden = !free;
+  if(free) $("odFree").textContent = `🎁 Your starting credits are on us — this run costs you nothing.`;
+}
+
+function odMount(){
+  if(practice){ $("odBlock").hidden = true; return; }
+  const show = ()=>{
+    if(!CR.spend) return;
+    const s = CR.spend, r = CR.rules;
+    $("odCostLife1").textContent = crPlural(s.life.credits, "credit");
+    $("odCostLife2").textContent = crPlural(s.life.credits*2, "credit");
+    $("odCostSlow").textContent  = crPlural(s.slowclock.credits, "credit");
+    $("odOptLife2").hidden = r.maxLives < r.baseLives + 2;
+    $("odSub").textContent =
+      "Today's run is locked into the Daily board for good. Overdrive is a second board for extra attempts at the same puzzle — your free run is already on it.";
+    $("odBlock").hidden = false;
+    odRefresh();
+  };
+  if(CR.loaded) show();
+  else crFetch().then(show).catch(()=>{ $("odBlock").hidden = true; });
+}
+
+/* +1 and +2 lives are alternatives, not cumulative. */
+$("odLife1").onchange = ()=>{ if($("odLife1").checked) $("odLife2").checked = false; odRefresh(); };
+$("odLife2").onchange = ()=>{ if($("odLife2").checked) $("odLife1").checked = false; odRefresh(); };
+$("odSlow").onchange  = odRefresh;
+$("odWhat").onclick   = ()=> $("ovOd").hidden = false;
+$("odStore").onclick  = ()=> openStore();
+
+$("odGo").onclick = ()=>{
+  const cost = odCost();
+  if(CR.credits < cost){ openStore(); return; }
+  if(!lbJoined()){
+    // Overdrive is a leaderboard, so a run that can't be filed isn't worth
+    // charging for — collect the name first.
+    toast("Add your name first so your run can be ranked");
+    $("lbJoin").hidden = false; $("lbAs").hidden = true; $("lbName").focus();
+    return;
+  }
+  const extraLives = $("odLife2").checked ? 2 : ($("odLife1").checked ? 1 : 0);
+  const slowClock = $("odSlow").checked;
+  const btn = $("odGo");
+  btn.disabled = true; btn.textContent = "Starting…";
+  fetch("/api/spend", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ pid: lbPid(), day: DAY, extraLives, slowClock })
+  }).then(r=>r.json().then(d=>({ok:r.ok, status:r.status, d})))
+    .then(({ok,status,d})=>{
+      btn.disabled = false;
+      if(!ok){
+        if(status===402){ CR.credits = d.credits ?? CR.credits; odRefresh(); openStore(); return; }
+        if(status===429){ toast("That's the daily run cap — see you tomorrow"); odRefresh(); return; }
+        if(status===409 && d.error==="stale_day"){ toast("A new puzzle just dropped — reloading"); setTimeout(()=>location.reload(), 1200); return; }
+        toast("Couldn't start that run — no credits were taken"); odRefresh(); return;
+      }
+      CR.credits = d.credits;
+      store.set("hm_spent","1");
+      try{ va('event',{name:'overdrive_start',data:{day:DAY,run:d.run,spent:d.spent}}); }catch(e){}
+      $("ovResult").hidden = true;
+      freshGame(false, { token:d.token, lives:d.lives, timeMult:d.timeMult, n:d.run });
+    })
+    .catch(()=>{ btn.disabled = false; toast("Network hiccup — no credits were taken"); odRefresh(); });
+};
+
+/* ---- the store ---- */
+function renderPacks(){
+  const el = $("packGrid");
+  if(!CR.storeOpen || !CR.packs.length){
+    el.innerHTML = "";
+    $("storeClosed").hidden = CR.storeOpen;
+    return;
+  }
+  $("storeClosed").hidden = true;
+  el.innerHTML = CR.packs.map(p=>{
+    const each = Math.round(p.amount / p.credits);
+    return `<button class="pack${p.badge?" hero":""}" data-sku="${lbEsc(p.sku)}">`+
+      `<span class="pack-main">`+
+        `<span class="pack-name">${lbEsc(p.name)}`+
+          (p.badge?`<span class="pack-badge">${lbEsc(p.badge)}</span>`:"")+
+        `</span>`+
+        `<span class="pack-blurb">${lbEsc(p.blurb)}</span>`+
+      `</span>`+
+      `<span class="pack-price">${crMoney(p.amount)}<span class="pack-each">${each}¢ a credit</span></span>`+
+    `</button>`;
+  }).join("");
+  el.querySelectorAll(".pack").forEach(b=>{
+    b.onclick = ()=>buyPack(b.getAttribute("data-sku"), b);
+  });
+}
+
+function renderStore(){
+  $("storeBal").textContent = `You have ${crPlural(CR.credits, "credit")}.`;
+  $("restoreCode").textContent = CR.restore || "—";
+  renderPacks();
+}
+
+function openStore(){
+  $("ovStore").hidden = false;
+  try{ va('event',{name:'store_open',data:{day:DAY,credits:CR.credits}}); }catch(e){}
+  if(CR.loaded) renderStore();
+  else{
+    $("storeBal").textContent = "Loading…";
+    crFetch().then(renderStore).catch(()=>{ $("storeBal").textContent = "Couldn't load your balance."; });
+  }
+}
+
+function buyPack(sku, btn){
+  if(!sku) return;
+  const label = btn ? btn.innerHTML : "";
+  if(btn){ btn.disabled = true; btn.style.opacity = ".6"; }
+  try{ va('event',{name:'checkout_start',data:{day:DAY,sku}}); }catch(e){}
+  fetch("/api/checkout", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ pid: lbPid(), sku })
+  }).then(r=>r.ok ? r.json() : Promise.reject(new Error("checkout")))
+    .then(d=>{
+      if(!d || !d.url) throw new Error("checkout");
+      // Note what we're expecting back, so the return trip can tell "the
+      // webhook landed" apart from "you already had a balance".
+      store.set("hm_pending", JSON.stringify({ before: CR.credits, add: d.credits||0 }));
+      location.href = d.url;
+    })
+    .catch(()=>{
+      if(btn){ btn.disabled = false; btn.style.opacity = ""; btn.innerHTML = label; }
+      toast("Checkout is unavailable right now");
+    });
+}
+
+$("restoreGo").onclick = ()=>{
+  const code = ($("restoreIn").value||"").trim().toUpperCase();
+  if(!code){ $("restoreIn").focus(); return; }
+  fetch("/api/wallet", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ pid: lbPid(), restore: code })
+  }).then(r=>r.ok ? r.json() : Promise.reject(new Error("restore")))
+    .then(d=>{
+      crApply(d);
+      $("restoreIn").value = "";
+      renderStore(); odRefresh();
+      toast(`Restored — you have ${crPlural(CR.credits, "credit")}`);
+    })
+    .catch(()=>toast("That code didn't match a balance"));
+};
+
+/* ---- coming back from Stripe ----------------------------------------------
+   The success URL proves nothing (anyone can type it), so credits are applied
+   by the webhook. All we do here is poll until the new balance shows up. */
+(function handleCheckoutReturn(){
+  const q = new URLSearchParams(location.search);
+  const state = q.get("credits");
+  if(!state) return;
+  const clean = location.pathname + location.hash;
+  try{ history.replaceState(null, "", clean); }catch(e){}
+  let pending = null;
+  try{ pending = JSON.parse(store.get("hm_pending")||"null"); }catch(e){}
+  store.set("hm_pending","");
+  if(state !== "ok"){ toast("Checkout cancelled — nothing was charged"); return; }
+
+  try{ va('event',{name:'checkout_return',data:{day:DAY}}); }catch(e){}
+  toast("Payment received — adding your credits…");
+  const target = pending ? (pending.before||0) + (pending.add||1) : 1;
+  let tries = 0;
+  (function poll(){
+    crFetch().then(()=>{
+      if(CR.credits >= target){
+        renderStore(); odRefresh();
+        toast(`Credits added — you have ${crPlural(CR.credits, "credit")}`);
+        return;
+      }
+      if(++tries < 8) setTimeout(poll, 1500);
+      else toast("Payment received — your credits will appear shortly");
+    }).catch(()=>{ if(++tries < 8) setTimeout(poll, 1500); });
+  })();
+})();
 
 /* ============ get notified ============ */
 $("btnEmailNotify").onclick = ()=>{

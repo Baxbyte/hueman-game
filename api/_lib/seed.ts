@@ -109,13 +109,21 @@ export async function ensureSeeded(day: number): Promise<void> {
 
   const rows = seedRowsForDay(day);
   await sql.transaction(
-    rows.map(
-      (r) => sql`
+    rows.flatMap((r) => [
+      sql`
         INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
         VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, ${r.ts})
         ON CONFLICT (day, pid) DO NOTHING
-      `
-    )
+      `,
+      // Holders appear on Overdrive too, with a single unboosted run — the same
+      // rule real free players get, so an empty Overdrive board never greets a
+      // player who just spent credits.
+      sql`
+        INSERT INTO scores_od (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
+        VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, 1, false, ${r.ts})
+        ON CONFLICT (day, pid) DO NOTHING
+      `,
+    ])
   );
   seededDays.add(day);
 }

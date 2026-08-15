@@ -53,12 +53,28 @@ export function computeStreakTrend(
   return { streak, trend: cur > prev ? "up" : cur < prev ? "down" : "flat" };
 }
 
+/** The two daily boards. `daily` is free first runs only; `overdrive` is best-of. */
+export type BoardKind = "daily" | "overdrive";
+export function asBoardKind(v: unknown): BoardKind {
+  return v === "overdrive" ? "overdrive" : "daily";
+}
+
 /** 1-based rank within the day for a given composite score (1 = best). */
 export async function rankForScore(day: number, score: number): Promise<number> {
   // Count entries strictly better (higher score) than this one.
   const rows = (await getSql()`
     SELECT count(*)::int AS better
     FROM scores
+    WHERE day = ${day} AND score > ${score}
+  `) as { better: number }[];
+  return (rows[0]?.better ?? 0) + 1;
+}
+
+/** Same as rankForScore, against the Overdrive board. */
+export async function rankForScoreOd(day: number, score: number): Promise<number> {
+  const rows = (await getSql()`
+    SELECT count(*)::int AS better
+    FROM scores_od
     WHERE day = ${day} AND score > ${score}
   `) as { better: number }[];
   return (rows[0]?.better ?? 0) + 1;
