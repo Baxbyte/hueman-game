@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { PID_RE, CURRENCY, packForSku } from "./_lib/credits.js";
+import { getStripe } from "./_lib/stripe.js";
 
 /**
  * POST /api/checkout { pid, sku } → { url }
@@ -10,12 +11,7 @@ import { PID_RE, CURRENCY, packForSku } from "./_lib/credits.js";
  * in the Stripe dashboard: point STRIPE_SECRET_KEY at any existing Stripe
  * account and the packs in _lib/credits.ts become the catalogue. Changing a
  * price is a code change, reviewed like any other.
- *
- * Talking to Stripe over plain fetch keeps this repo dependency-free, matching
- * the rest of the codebase.
  */
-
-const STRIPE_API = "https://api.stripe.com/v1/checkout/sessions";
 
 const SITE = "https://huemangame.com";
 
@@ -53,8 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "method_not_allowed" });
   }
 
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return res.status(503).json({ error: "store_closed" });
+  const stripe = getStripe();
+  if (!stripe) return res.status(503).json({ error: "store_closed" });
 
   let body: any = req.body;
   if (typeof body === "string") {
@@ -74,47 +70,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!pack) return res.status(400).json({ error: "bad_sku" });
 
   const site = origin(req);
-  const form = new URLSearchParams({
-    mode: "payment",
-    success_url: `${site}/?credits=ok&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${site}/?credits=cancel`,
-    client_reference_id: pid,
-    "line_items[0][quantity]": "1",
-    "line_items[0][price_data][currency]": CURRENCY,
-    "line_items[0][price_data][unit_amount]": String(pack.amount),
-    "line_items[0][price_data][product_data][name]": `HUEMAN — ${pack.name}`,
-    "line_items[0][price_data][product_data][description]":
-      "Credits for extra runs at the daily HUEMAN puzzle. Non-refundable digital goods.",
-    // Read back by the webhook. Credits are taken from metadata rather than
-    // re-derived from the amount, so a price change can never retro-price an
-    // in-flight session.
-    "metadata[pid]": pid,
-    "metadata[sku]": pack.sku,
-    "metadata[credits]": String(pack.credits),
-    "payment_intent_data[metadata][pid]": pid,
-    "payment_intent_data[metadata][sku]": pack.sku,
-    allow_promotion_codes: "true",
-  });
 
   try {
-    const r = await fetch(STRIPE_API, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        success_url: `${site}/?credits=ok&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${site}/?credits=cancel`,
+        client_reference_id: pid,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: CURRENCY,
+              unit_amount: pack.amount,
+              product_data: {
+                name: `HUEMAN — ${pack.name}`,
+                description:
+                  "Credits for extra runs at the daily HUEMAN puzzle. Non-refundable digital goods.",
+              },
+            },
+          },
+        ],
+        // Read back by the webhook. Credits are taken from metadata rather than
+        // re-derived from the amount, so a price change can never retro-price an
+        // in-flight session.
+        metadata: { pid, sku: pack.sku, credits: String(pack.credits) },
+        payment_intent_data: { metadata: { pid, sku: pack.sku } },
+        allow_promotion_codes: true,
+      },
+      {
         // Retries of the same intent reuse the session instead of opening a
         // second one; the minute bucket keeps a deliberate re-purchase working.
-        "Idempotency-Key": `hue:${pid}:${pack.sku}:${Math.floor(Date.now() / 60000)}`,
-      },
-      body: form,
-    });
-    const data: any = await r.json();
-    if (!r.ok || !data?.url) {
-      return res.status(502).json({ error: "stripe_error" });
-    }
+        idempotencyKey: `hue:${pid}:${pack.sku}:${Math.floor(Date.now() / 60000)}`,
+      }
+    );
+
+    if (!session.url) return res.status(502).json({ error: "stripe_error" });
     res.setHeader("Cache-Control", "no-store");
-    return res.status(200).json({ url: data.url, sku: pack.sku, credits: pack.credits });
-  } catch {
-    return res.status(502).json({ error: "stripe_unreachable" });
+    return res.status(200).json({ url: session.url, sku: pack.sku, credits: pack.credits });
+  } catch (err) {
+    // Never surface Stripe's message to the client — it can echo account state.
+    const kind =
+      err instanceof Error && err.name === "StripeConnectionError"
+        ? "stripe_unreachable"
+        : "stripe_error";
+    return res.status(502).json({ error: kind });
   }
 }

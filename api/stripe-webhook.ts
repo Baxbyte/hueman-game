@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ensureSchema } from "./_lib/db.js";
 import { PID_RE, packForSku, creditPurchase } from "./_lib/credits.js";
-import { verifyStripeSignature } from "./_lib/stripe-sig.js";
+import { getStripe, type Stripe } from "./_lib/stripe.js";
 
 /**
  * POST /api/stripe-webhook — the only path that can mint paid credits.
@@ -15,6 +15,8 @@ import { verifyStripeSignature } from "./_lib/stripe-sig.js";
 // Stripe signs the exact bytes it sent, so the body must not be parsed for us.
 export const config = { api: { bodyParser: false } };
 
+// Uint8Array rather than Buffer: Buffer's declared type varies over
+// ArrayBufferLike, which the SDK's WebhookPayload signature rejects.
 function rawBody(req: VercelRequest): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const chunks: Uint8Array[] = [];
@@ -39,7 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) return res.status(503).json({ error: "webhook_not_configured" });
+  const stripe = getStripe();
+  if (!secret || !stripe) return res.status(503).json({ error: "webhook_not_configured" });
 
   const sigRaw = req.headers["stripe-signature"];
   const sig = Array.isArray(sigRaw) ? sigRaw[0] : sigRaw;
@@ -51,34 +54,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch {
     return res.status(413).json({ error: "too_large" });
   }
-  if (!verifyStripeSignature(payload, sig, secret)) {
+
+  // constructEvent both verifies the signature (with Stripe's own timestamp
+  // tolerance and multi-signature rotation handling) and parses the payload,
+  // so a forged or replayed request never reaches the crediting code below.
+  let event: Stripe.Event;
+  try {
+    event = await stripe.webhooks.constructEventAsync(payload, sig, secret);
+  } catch {
     return res.status(400).json({ error: "bad_signature" });
   }
 
-  let event: any;
-  try {
-    event = JSON.parse(new TextDecoder().decode(payload));
-  } catch {
-    return res.status(400).json({ error: "bad_json" });
-  }
-
   // Anything else (refunds, disputes, test pings) is acknowledged and ignored.
-  const kind = event?.type;
-  if (kind !== "checkout.session.completed" && kind !== "checkout.session.async_payment_succeeded") {
+  if (
+    event.type !== "checkout.session.completed" &&
+    event.type !== "checkout.session.async_payment_succeeded"
+  ) {
     return res.status(200).json({ received: true });
   }
 
-  const session = event?.data?.object ?? {};
+  // Narrowed by the event type above, so this is a Checkout Session.
+  const session = event.data.object;
   if (session.payment_status !== "paid") {
     // Delayed payment methods land here first; the async_payment_succeeded
     // event follows once the money actually clears.
     return res.status(200).json({ received: true, pending: true });
   }
 
-  const pid: string = session?.metadata?.pid || session?.client_reference_id || "";
-  const pack = packForSku(session?.metadata?.sku);
-  const credits = Number(session?.metadata?.credits);
-  const sessionId: string = session?.id || "";
+  const pid = session.metadata?.pid || session.client_reference_id || "";
+  const pack = packForSku(session.metadata?.sku);
+  const credits = Number(session.metadata?.credits);
+  const sessionId = session.id || "";
 
   if (!PID_RE.test(pid) || !pack || !sessionId || !Number.isFinite(credits) || credits <= 0) {
     // Acknowledge so Stripe stops retrying something we can never apply.
