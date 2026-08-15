@@ -11,11 +11,16 @@ import {
   RETENTION_DAYS,
   compositeScore,
   rankForScore,
+  rankForScoreOd,
 } from "./_lib/board.js";
 import { ensureSeeded } from "./_lib/seed.js";
+import { verifyRunToken } from "./_lib/token.js";
+import { BASE_LIVES } from "./_lib/credits.js";
 
 const PID_RE = /^[a-z0-9]{8,40}$/i;
-const RATE_LIMIT = 30; // submissions per IP per day
+// Submissions per IP per day. Headroom for the free run plus a full day of
+// Overdrive attempts (capped at 20 in /api/spend) and the odd retry.
+const RATE_LIMIT = 60;
 
 function clientIp(req: VercelRequest): string {
   const xff = req.headers["x-forwarded-for"];
@@ -94,18 +99,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const score = compositeScore(level, timeMs);
     const ts = Date.now();
 
-    // One entry per player per day; only overwrite if this run is better.
+    // A valid run token means this result came from a credit-funded extra run,
+    // so it belongs on Overdrive. Everything else is the player's one free run
+    // of the day and belongs on the pure Daily board.
+    const claims = verifyRunToken(body.token);
+    const paid = !!claims && claims.pid === pid && claims.day === DAY;
+    const attempts = paid ? claims!.n + 1 : 1;
+    const boosted = paid && (claims!.lives > BASE_LIVES || claims!.m > 100);
+
+    if (!paid) {
+      // Daily board: written once and then frozen. A player's rank here can
+      // only ever be beaten by someone else's first run — no amount of money
+      // moves this row, which is what keeps the free game worth playing.
+      // Display fields still follow a name change; the run itself never does.
+      await sql`
+        INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
+        VALUES (${DAY}, ${pid}, ${name}, ${country}, ${level}, ${timeMs}, ${score}, ${ts})
+        ON CONFLICT (day, pid) DO UPDATE SET
+          name = EXCLUDED.name, country = EXCLUDED.country
+      `;
+    } else {
+      await sql`UPDATE runs SET used = true WHERE day = ${DAY} AND pid = ${pid} AND n = ${claims!.n}`;
+    }
+
+    // Overdrive takes every run from everyone — free players included, with
+    // their single attempt — and keeps the best. Buying credits buys more
+    // chances at this board, not a better starting position on it.
     await sql`
-      INSERT INTO scores (day, pid, name, country, level, time_ms, score, ts)
-      VALUES (${DAY}, ${pid}, ${name}, ${country}, ${level}, ${timeMs}, ${score}, ${ts})
+      INSERT INTO scores_od (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
+      VALUES (${DAY}, ${pid}, ${name}, ${country}, ${level}, ${timeMs}, ${score},
+              ${attempts}, ${boosted}, ${ts})
       ON CONFLICT (day, pid) DO UPDATE SET
         name = EXCLUDED.name, country = EXCLUDED.country, level = EXCLUDED.level,
-        time_ms = EXCLUDED.time_ms, score = EXCLUDED.score, ts = EXCLUDED.ts
-      WHERE EXCLUDED.score > scores.score
+        time_ms = EXCLUDED.time_ms, score = EXCLUDED.score,
+        boosted = EXCLUDED.boosted, ts = EXCLUDED.ts
+      WHERE EXCLUDED.score > scores_od.score
+    `;
+    // Attempt count tracks the whole day, not just the winning run, so it is
+    // updated even when this run failed to beat the player's own best.
+    await sql`
+      UPDATE scores_od SET runs = GREATEST(runs, ${attempts})
+      WHERE day = ${DAY} AND pid = ${pid}
     `;
 
     // Opportunistically prune days that have aged out of the viewable window.
     await sql`DELETE FROM scores WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
+    await sql`DELETE FROM scores_od WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
+    await sql`DELETE FROM runs WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
     await sql`DELETE FROM rate_limits WHERE day < ${DAY}`;
 
     const bestRows = (await sql`
@@ -122,7 +162,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const percentile =
       total > 0 ? Math.max(1, Math.round((1 - (rank - 1) / total) * 100)) : 100;
 
-    return res.status(200).json({ ok: true, day: DAY, rank, total, percentile });
+    const odBestRows = (await sql`
+      SELECT score, runs FROM scores_od WHERE day = ${DAY} AND pid = ${pid}
+    `) as { score: number; runs: number }[];
+    const odBest = odBestRows[0]?.score ?? null;
+    const odTotalRows = (await sql`
+      SELECT count(*)::int AS total FROM scores_od WHERE day = ${DAY}
+    `) as { total: number }[];
+    const od = {
+      rank: odBest == null ? 0 : await rankForScoreOd(DAY, Number(odBest)),
+      total: odTotalRows[0]?.total ?? 0,
+      runs: odBestRows[0]?.runs ?? attempts,
+    };
+
+    return res.status(200).json({
+      ok: true,
+      day: DAY,
+      board: paid ? "overdrive" : "daily",
+      rank,
+      total,
+      percentile,
+      od,
+    });
   } catch (err: any) {
     const unconfigured = err && err.message === "db_not_configured";
     return res
