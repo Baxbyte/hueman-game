@@ -1,5 +1,5 @@
 /* Exercises the two signature paths that money depends on:
-   the run token that authorises an Overdrive run, and Stripe's webhook signature. */
+   the run token that authorises an Unlimited run, and Stripe's webhook signature. */
 import { createHmac } from "node:crypto";
 import Stripe from "stripe";
 

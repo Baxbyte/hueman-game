@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { currentDay } from "./_lib/day.js";
 import { brandHue, longDate } from "./_lib/puzzle.js";
-import { decodeResult, cellsToEmojiGrid, CELL_EMOJI } from "./_lib/result.js";
+import { decodeResult } from "./_lib/result.js";
+import { climbTrackHtml, missLevelsFromCells, MAX_LEVEL } from "./_lib/climb.js";
 import { shell, esc, SITE_URL } from "./_lib/page.js";
 
 function qStr(v: VercelRequest["query"][string]): string {
@@ -39,11 +40,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   const { day, level, cells } = decoded;
   const isToday = day === today;
-  const grid = cellsToEmojiGrid(cells);
-  const gridHtml = grid
-    .split("\n")
-    .map((row) => `<div class="rgrid-row">${Array.from(row).map((ch) => `<span>${ch}</span>`).join("")}</div>`)
-    .join("");
+  const missLevels = missLevelsFromCells(cells);
 
   const hue = brandHue(day);
   const dateStr = longDate(day);
@@ -62,8 +59,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
        <p><a class="cta" href="/">Play today's HUEMAN #${today} →</a></p>`;
 
   const extraCss = `<style>
-    .rgrid{display:inline-flex;flex-direction:column;gap:6px;margin:18px 0;font-size:1.9rem;line-height:1}
-    .rgrid-row{display:flex;gap:6px;justify-content:center}
+    .runcard{--rc-h:26px;background:var(--surface-2);border:1px solid var(--line);
+      border-radius:16px;padding:16px;margin:20px 0;text-align:left}
     .note{color:var(--muted);font-size:.9rem}
     .rhero{text-align:center}
     .rlevel{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
@@ -73,8 +70,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   const body = `<div class="rhero">
   <p class="eyebrow">HUEMAN #${day} · ${esc(dateStr)}</p>
   <h1>Can you beat them?</h1>
-  <p class="rlevel">Level ${level}</p>
-  <div class="rgrid" role="img" aria-label="Their result: ${Array.from(grid).filter((c)=>CELL_EMOJI.includes(c as any)).length} squares reaching level ${level}">${gridHtml}</div>
+  <p class="rlevel">Level ${level} <span style="font-size:.4em;color:var(--muted)">of ${MAX_LEVEL}</span></p>
+  <div class="runcard">${climbTrackHtml(level, missLevels)}<p class="rc-key">The bar is how far up the 60-level climb they got. Each <b>\u2715</b> is a life lost.</p></div>
   ${cta}
 </div>
 

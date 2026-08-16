@@ -61,14 +61,37 @@ export function ensureSchema(): Promise<void> {
       )
     `;
 
-    // ---- Overdrive board -------------------------------------------------
+    // ---- Unlimited board -------------------------------------------------
     // `scores` is the PURE daily board: a player's first, unassisted run only,
-    // written once and never overwritten. Overdrive is the second board, where
+    // written once and never overwritten. Unlimited is the second board, where
     // extra (credit-funded) runs and boosted runs compete. Every free run is
     // mirrored here too, so a free player with one great run can still top it —
     // buying credits buys more attempts, never a head start.
+    // This board shipped as "Overdrive" and was renamed to "Unlimited". Carry
+    // the existing rows across rather than stranding them in an orphaned table.
+    //
+    // Order matters: this MUST run before the CREATE below. If CREATE ran first
+    // it would make an empty scores_unlimited, the rename would then be skipped
+    // because the target exists, and every live row would be left behind in
+    // scores_od with the board silently reading as empty.
     await db`
-      CREATE TABLE IF NOT EXISTS scores_od (
+      DO $mig$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables
+                   WHERE table_schema = current_schema() AND table_name = 'scores_od')
+           AND NOT EXISTS (SELECT 1 FROM information_schema.tables
+                   WHERE table_schema = current_schema() AND table_name = 'scores_unlimited')
+        THEN
+          ALTER TABLE scores_od RENAME TO scores_unlimited;
+          IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'scores_od_day_score_idx') THEN
+            ALTER INDEX scores_od_day_score_idx RENAME TO scores_unlimited_day_score_idx;
+          END IF;
+        END IF;
+      END
+      $mig$;
+    `;
+    await db`
+      CREATE TABLE IF NOT EXISTS scores_unlimited (
         day     integer NOT NULL,
         pid     text    NOT NULL,
         name    text    NOT NULL,
@@ -83,8 +106,8 @@ export function ensureSchema(): Promise<void> {
       )
     `;
     await db`
-      CREATE INDEX IF NOT EXISTS scores_od_day_score_idx
-        ON scores_od (day, score DESC)
+      CREATE INDEX IF NOT EXISTS scores_unlimited_day_score_idx
+        ON scores_unlimited (day, score DESC)
     `;
 
     // ---- credits ---------------------------------------------------------
@@ -125,8 +148,28 @@ export function ensureSchema(): Promise<void> {
         ON credit_ledger (ref) WHERE ref IS NOT NULL
     `;
 
+    // Email addresses given at checkout. `marketing` is stored separately from
+    // the row's existence on purpose: everyone who buys gets a transactional
+    // receipt (they asked for it by paying), but only an explicit tick puts
+    // them on the daily list. Conflating the two is how people end up on
+    // mailing lists they never joined.
+    await db`
+      CREATE TABLE IF NOT EXISTS subscribers (
+        email     text PRIMARY KEY,
+        pid       text,
+        source    text    NOT NULL,
+        marketing boolean NOT NULL DEFAULT false,
+        created   bigint  NOT NULL,
+        updated   bigint  NOT NULL
+      )
+    `;
+    await db`
+      CREATE INDEX IF NOT EXISTS subscribers_marketing_idx
+        ON subscribers (marketing) WHERE marketing
+    `;
+
     // One row per paid/boosted run so run numbers can't be replayed and the
-    // Overdrive board can show how many attempts a score took.
+    // Unlimited board can show how many attempts a score took.
     await db`
       CREATE TABLE IF NOT EXISTS runs (
         day     integer NOT NULL,

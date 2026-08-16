@@ -1,6 +1,10 @@
 import { ImageResponse } from "@vercel/og";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { decodeResult, CELL_HEX } from "./_lib/result.js";
+import { decodeResult } from "./_lib/result.js";
+import {
+  climbPos, missLevelsFromCells, clusterMisses, listLevels, distinctLevels,
+  MAX_LEVEL, AVG_LEVEL,
+} from "./_lib/climb.js";
 
 // Mirrors the daily seed + color math in index.html so the card always shows today's real hue.
 const EPOCH_UTC = Date.UTC(2026, 5, 11);
@@ -40,45 +44,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rr = mulberry32(decoded.day * 7919 + 13);
     const rHue = Math.floor(rr() * 360);
     const rAccent = `hsl(${rHue}, 70%, 55%)`;
-    const shown = decoded.cells.slice(0, 42);
-    const squares = shown.map((c) =>
-      el("div", {
-        width: 78,
-        height: 78,
-        borderRadius: 14,
-        background: CELL_HEX[c] ?? "#2A2A33",
-        ...(c === 6 ? { border: "2px solid #3A3A44" } : {}),
-      })
-    );
+    // A full-width climb across the bottom rather than a grid of squares: at
+    // timeline-thumbnail size a wide bar with a big number stays legible where
+    // 42 small cells turn to mush.
+    const rMiss = missLevelsFromCells(decoded.cells);
+    const TX = 70, TW = 1060, TY = 430, TH = 56;
+    const atPct = (p: number) => TX + (TW * p) / 100;
+    const rFill = (TW * climbPos(decoded.level)) / 100;
+    const rHead = Math.min(TX + TW - 6, Math.max(TX, atPct(climbPos(decoded.level)) - 3));
     const rCard = el(
       "div",
       {
         width: "100%",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
         background: "#0E0E12",
         color: "#F4F2EC",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "60px 70px",
+        padding: "56px 70px",
+        position: "relative",
       },
       [
-        el("div", { display: "flex", flexDirection: "column", maxWidth: 560 }, [
-          el("div", { display: "flex", fontSize: 60, fontWeight: 800 }, [
-            el("span", { color: rAccent }, "HUE"),
-            el("span", {}, "MAN"),
-            el("span", { color: "#8C8C98", fontSize: 34, marginLeft: 16, marginTop: 22 }, `#${decoded.day}`),
-          ]),
-          el("div", { fontSize: 34, color: "#8C8C98", marginTop: 30 }, "Someone reached"),
-          el("div", { display: "flex", fontSize: 116, fontWeight: 800, color: rAccent, lineHeight: 1 }, `Level ${decoded.level}`),
-          el("div", { fontSize: 40, fontWeight: 700, marginTop: 20 }, "Can you beat them?"),
-          el("div", { fontSize: 26, color: "#8C8C98", marginTop: 30 }, "One puzzle a day · huemangame.com"),
+        el("div", { display: "flex", fontSize: 56, fontWeight: 800 }, [
+          el("span", { color: rAccent }, "HUE"),
+          el("span", {}, "MAN"),
+          el("span", { color: "#8C8C98", fontSize: 32, marginLeft: 16, marginTop: 20 }, `#${decoded.day}`),
         ]),
-        el(
-          "div",
-          { display: "flex", flexWrap: "wrap", width: 430, height: 510, gap: 12, alignContent: "center", justifyContent: "flex-end" },
-          squares
-        ),
+        el("div", { display: "flex", alignItems: "flex-end", marginTop: 26 }, [
+          el("span", { fontSize: 150, fontWeight: 800, color: rAccent, lineHeight: 1 }, `${decoded.level}`),
+          el("span", { fontSize: 44, color: "#8C8C98", marginLeft: 18, marginBottom: 22 }, `of ${MAX_LEVEL} levels`),
+        ]),
+        el("div", { display: "flex", fontSize: 38, fontWeight: 700, marginTop: 10 }, "Can you beat them?"),
+
+        el("div", { position: "absolute", left: TX, top: TY, width: TW, height: TH, display: "flex",
+                    background: "#17171D", border: "2px solid #2A2A33", borderRadius: TH / 2 }),
+        el("div", { position: "absolute", left: TX, top: TY, width: rFill, height: TH, display: "flex",
+                    borderRadius: TH / 2,
+                    backgroundImage: `linear-gradient(90deg, #1E2A33 0%, ${rAccent} 100%)` }),
+        el("div", { position: "absolute", left: atPct(climbPos(AVG_LEVEL)), top: TY, width: 2, height: TH,
+                    display: "flex", background: "#8C8C98", opacity: 0.7 }),
+        // Lives lost are gaps cut in the page colour, so they read on any hue.
+        ...clusterMisses(rMiss).map((c) =>
+          el("div", { position: "absolute", left: atPct(c.pos) - 5, top: TY - 2, width: 10, height: TH + 4,
+                      display: "flex", background: "#0E0E12", border: "1px solid #E0524D" })),
+        el("div", { position: "absolute", left: rHead, top: TY - 5, width: 6, height: TH + 10,
+                    display: "flex", background: "#F4F2EC", borderRadius: 3 }),
+        el("div", { position: "absolute", left: TX, top: TY + TH + 12, display: "flex", fontSize: 24, color: "#8C8C98" }, "Level 1"),
+        el("div", { position: "absolute", left: TX + TW - 96, top: TY + TH + 12, display: "flex", fontSize: 24, color: "#8C8C98" }, `Level ${MAX_LEVEL}`),
+        el("div", { position: "absolute", left: TX, top: TY + TH + 58, display: "flex", fontSize: 28, color: "#8C8C98" },
+          rMiss.length
+            ? `${rMiss.length} ${rMiss.length > 1 ? "lives" : "life"} lost at level${distinctLevels(rMiss) > 1 ? "s" : ""} ${listLevels(rMiss)}  ·  huemangame.com`
+            : `No lives lost  ·  huemangame.com`),
       ]
     );
     const rImg = new ImageResponse(rCard as any, { width: 1200, height: 630 });

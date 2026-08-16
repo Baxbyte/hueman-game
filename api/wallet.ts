@@ -15,7 +15,7 @@ import {
 } from "./_lib/credits.js";
 
 // A wallet is created on first sight and comes with free credits, so an
-// unbounded endpoint would let one machine farm Overdrive entries by inventing
+// unbounded endpoint would let one machine farm Unlimited entries by inventing
 // pids. A real player's client hits this a handful of times a day.
 const WALLET_LIMIT = 100;
 // Restore codes protect a paid balance, so guessing attempts get a tight cap.

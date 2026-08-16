@@ -5,7 +5,7 @@ import {
   TOP_N,
   RETENTION_DAYS,
   rankForScore,
-  rankForScoreOd,
+  rankForScoreUnlimited,
   computeStreakTrend,
   asBoardKind,
   type Trend,
@@ -13,11 +13,11 @@ import {
 import { ensureSeeded } from "./_lib/seed.js";
 
 /**
- * GET /api/leaderboard?day=&pid=&board=daily|overdrive
+ * GET /api/leaderboard?day=&pid=&board=daily|unlimited
  *
  *  - `daily` (default): every player's first, unassisted run. The original
  *    board, unchanged — credits cannot put a row on it or move one.
- *  - `overdrive`: best run of the day from anyone, including credit-funded
+ *  - `unlimited`: best run of the day from anyone, including credit-funded
  *    extra runs. Free players appear here too, with their single attempt.
  */
 
@@ -53,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : today;
 
   const board = asBoardKind(Array.isArray(req.query.board) ? req.query.board[0] : req.query.board);
-  const overdrive = board === "overdrive";
+  const unlimited = board === "unlimited";
 
   const pid = typeof req.query.pid === "string" ? req.query.pid : "";
   const geoRaw = req.headers["x-vercel-ip-country"];
@@ -67,10 +67,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await ensureSeeded(day);
 
     // Top N entries (highest composite score first) with their display meta.
-    const rows = (overdrive
+    const rows = (unlimited
       ? await sql`
           SELECT pid, name, country, level, time_ms, runs, boosted
-          FROM scores_od
+          FROM scores_unlimited
           WHERE day = ${day}
           ORDER BY score DESC
           LIMIT ${TOP_N}
@@ -85,9 +85,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Pull each entrant's recent per-day scores once, to derive day-streak and
     // whether their score is trending up or down vs their previous appearance.
-    const histRows = (overdrive
+    const histRows = (unlimited
       ? await sql`
-          SELECT pid, day, score FROM scores_od
+          SELECT pid, day, score FROM scores_unlimited
           WHERE day <= ${day} AND day > ${day - RETENTION_DAYS}
         `
       : await sql`
@@ -115,12 +115,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         timeMs: r.time_ms ?? 0,
         streak: st.streak,
         trend: st.trend,
-        ...(overdrive ? { runs: r.runs ?? 1, boosted: !!r.boosted } : {}),
+        ...(unlimited ? { runs: r.runs ?? 1, boosted: !!r.boosted } : {}),
       };
     });
 
-    const totalRows = (overdrive
-      ? await sql`SELECT count(*)::int AS total FROM scores_od WHERE day = ${day}`
+    const totalRows = (unlimited
+      ? await sql`SELECT count(*)::int AS total FROM scores_unlimited WHERE day = ${day}`
       : await sql`SELECT count(*)::int AS total FROM scores WHERE day = ${day}`) as {
       total: number;
     }[];
@@ -137,9 +137,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       | null = null;
     if (pid) {
-      const meRows = (overdrive
+      const meRows = (unlimited
         ? await sql`
-            SELECT score, level, time_ms, runs FROM scores_od
+            SELECT score, level, time_ms, runs FROM scores_unlimited
             WHERE day = ${day} AND pid = ${pid}
           `
         : await sql`
@@ -149,14 +149,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (row) {
         const st = streakTrend(pid);
         me = {
-          rank: overdrive
-            ? await rankForScoreOd(day, Number(row.score))
+          rank: unlimited
+            ? await rankForScoreUnlimited(day, Number(row.score))
             : await rankForScore(day, Number(row.score)),
           level: row.level ?? 0,
           timeMs: row.time_ms ?? 0,
           streak: st.streak,
           trend: st.trend,
-          ...(overdrive ? { runs: row.runs ?? 1 } : {}),
+          ...(unlimited ? { runs: row.runs ?? 1 } : {}),
         };
       }
     }

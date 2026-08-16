@@ -87,6 +87,7 @@
     --text:#F4F2EC;
     --muted:#8C8C98;
     --daily:#4FA8D8; /* replaced at runtime with today's hue */
+    --miss:#E0524D;
     --tile-gap:10px;
     --radius:16px;
   }
@@ -255,30 +256,7 @@
   .btn.daily-tint{background:var(--daily);color:#fff}
 
   /* ---------- results ---------- */
-  .result-big{
-    font-family:'Bricolage Grotesque',sans-serif;
-    font-weight:800;font-size:3.4rem;line-height:1;
-    margin:4px 0 2px;
-  }
-  .result-pct{
-    font-size:1rem;font-weight:600;color:var(--daily);margin-bottom:4px;
-  }
-  .result-time{
-    font-size:.85rem;color:var(--muted);margin-bottom:16px;
-    font-variant-numeric:tabular-nums;
-  }
-  .share-preview{
-    background:var(--surface-2);border:1px solid var(--line);
-    border-radius:14px;padding:14px;
-    font-size:1rem;letter-spacing:1px;line-height:1.5;
-    word-break:break-all;margin-bottom:18px;
-    font-family:ui-monospace,monospace;
-  }
-  .share-preview .sp-head{
-    font-family:'Inter',sans-serif;font-size:.8rem;color:var(--muted);
-    letter-spacing:0;margin-bottom:6px;
-  }
-  .statgrid{display:flex;gap:8px;margin:6px 0 18px}
+            .statgrid{display:flex;gap:8px;margin:6px 0 18px}
   .stat{
     flex:1;background:var(--surface-2);border:1px solid var(--line);
     border-radius:14px;padding:12px 6px;text-align:center;
@@ -349,11 +327,7 @@
   }
   .hist-row:last-child{border-bottom:none}
   .hist-day{color:var(--muted);font-weight:600;min-width:44px;font-variant-numeric:tabular-nums}
-  .hist-grid{
-    flex:1;font-size:.88rem;letter-spacing:1px;
-    overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
-  }
-  .hist-lv{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .hist-lv{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
   .hist-empty{padding:16px;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5}
 
   /* ---------- leaderboard ---------- */
@@ -432,7 +406,99 @@
   footer a,.card a{color:var(--daily);text-decoration:none;font-weight:600}
   footer a:hover,.card a:hover{text-decoration:underline}
 
-  /* ---------- board tabs (Daily / Overdrive) ---------- */
+  /* ---------- run card: the climb ---------- */
+  .runcard{
+    --rc-h:30px;
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:var(--radius);padding:15px 16px 13px;margin:6px 0 18px;
+  }
+  .rc-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .rc-day{font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .rc-chip{
+    font-size:.64rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;white-space:nowrap;color:var(--text);
+    background:color-mix(in srgb,var(--daily) 20%,transparent);
+    border:1px solid color-mix(in srgb,var(--daily) 55%,var(--line));
+  }
+  .rc-chip[hidden]{display:none!important}
+  .rc-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .rc-score{display:flex;align-items:baseline;gap:9px;min-width:0}
+  .rc-num{
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+    font-size:3.2rem;line-height:.86;letter-spacing:-.02em;color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+  .rc-of{display:flex;flex-direction:column;font-size:.86rem;font-weight:700;color:var(--muted);line-height:1.25}
+  .rc-of em{font-style:normal;font-size:.7rem;font-weight:600;letter-spacing:.04em;opacity:.8}
+  .rc-pct{
+    flex:none;font-size:.8rem;font-weight:800;letter-spacing:.03em;
+    padding:5px 11px;border-radius:999px;color:var(--text);
+    background:color-mix(in srgb,var(--daily) 24%,transparent);
+    border:1px solid color-mix(in srgb,var(--daily) 60%,var(--line));
+    font-variant-numeric:tabular-nums;
+  }
+  .rc-climb{margin-bottom:12px}
+  .rc-foot{display:flex;align-items:center;flex-wrap:wrap;gap:5px 9px;font-size:.8rem;color:var(--muted);line-height:1.4}
+  .rc-lives{letter-spacing:2px;font-size:.85rem;color:var(--text);flex:none}
+  .rc-foot-txt{flex:1 1 150px;min-width:0}
+  .rc-time{flex:none;font-variant-numeric:tabular-nums}
+  @media (max-width:400px){
+    .runcard{--rc-h:26px;padding:13px 13px 11px}
+    .rc-num{font-size:2.7rem}
+    .rc-key{font-size:.67rem}
+  }
+  /* history rows reuse the same track at 10px, so days are directly comparable */
+  .hist-climb{flex:1;min-width:0;--rc-h:10px}
+  .hist-climb .rc-head{width:3px}
+  .hist-climb .rc-notch{width:4px;box-shadow:none}
+  .hist-climb .rc-avg,.hist-climb .rc-fill::after{display:none}
+  .hist-unl{color:var(--daily);font-weight:800;font-size:.72rem;flex:none}
+
+  /* climb:start — kept identical to CLIMB_CSS in api/_lib/climb.ts by tools/sync-climb-css.mjs */
+  .rc-marks{position:relative;height:14px}
+  .rc-marks span{position:absolute;bottom:0;left:clamp(6px,var(--pos),calc(100% - 6px));
+    transform:translateX(-50%);font-size:.68rem;font-weight:800;line-height:1;
+    color:var(--miss);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .rc-track{position:relative;height:var(--rc-h,30px);background:var(--surface);
+    border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .rc-track i{position:absolute;top:0;bottom:0;display:block}
+  .rc-fill{left:0;width:var(--pos);border-radius:999px 0 0 999px;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--daily) 45%,var(--ink)) 0%,var(--daily) 100%)}
+  .rc-fill::after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg,transparent 0 15px,rgba(244,242,236,.10) 15px 16px)}
+  /* Near-white cap: where the run stopped stays legible with no colour perception
+     at all, which matters because --daily is a different random hue every day. */
+  .rc-head{width:4px;border-radius:2px;left:clamp(4px,var(--pos),calc(100% - 4px));
+    transform:translateX(-50%);background:var(--text);box-shadow:0 0 0 1px rgba(14,14,18,.55)}
+  /* A life lost is a gap cut through the climb in the page colour — a hole reads
+     on every hue and in greyscale, where a red mark on a red day would vanish. */
+  .rc-notch{width:5px;left:clamp(4px,var(--pos),calc(100% - 4px));transform:translateX(-50%);
+    background:var(--ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--miss) 70%,transparent)}
+  .rc-avg{width:0;border-left:1px dashed var(--muted);opacity:.7;
+    left:clamp(1px,var(--pos),calc(100% - 1px))}
+  .rc-ghost{width:0;left:clamp(5px,var(--pos),calc(100% - 5px));transform:translateX(-50%);
+    border-left:2px dotted var(--text);opacity:.45}
+  .rc-ghost[hidden]{display:none!important}
+  .rc-scale{position:relative;height:15px;margin-top:5px}
+  .rc-scale span{position:absolute;top:0;font-size:.66rem;font-weight:600;color:var(--muted);
+    letter-spacing:.04em;white-space:nowrap}
+  .rc-s-a{left:0}.rc-s-b{right:0}
+  .rc-s-avg{left:clamp(0px,var(--pos),calc(100% - 34px));transform:translateX(-50%)}
+  .rc-key{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);
+    font-size:.7rem;line-height:1.45;color:var(--muted)}
+  .rc-key b{color:var(--miss);font-weight:800}
+  @media (prefers-reduced-motion:no-preference){
+    .rc-fill{animation:rcGrow .5s cubic-bezier(.22,.9,.3,1) both}
+    @keyframes rcGrow{from{width:0}to{width:var(--pos)}}
+  }
+  @media (forced-colors:active){
+    .rc-track{border:1px solid CanvasText}
+    .rc-fill{background:Highlight;forced-color-adjust:none}
+    .rc-head,.rc-notch{background:CanvasText;forced-color-adjust:none}
+  }
+  /* climb:end */
+
+  /* ---------- board tabs (Daily / Unlimited) ---------- */
   .lb-tabs{display:flex;gap:6px;margin:0 0 10px}
   .lb-tab{
     flex:1;padding:8px 6px;border-radius:10px;
@@ -451,37 +517,64 @@
     font-variant-numeric:tabular-nums;white-space:nowrap;
   }
 
-  /* ---------- overdrive / credits ---------- */
-  .od-block{
+  /* ---------- unlimited / credits ---------- */
+  .un-block{
     margin:18px 0 4px;padding:16px;
     background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
   }
-  .od-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 6px}
-  .od-title{font-size:1rem;font-weight:700;color:var(--text);margin:0}
-  .od-bal{font-size:.8rem;font-weight:700;color:var(--daily);white-space:nowrap;font-variant-numeric:tabular-nums}
-  .od-sub{font-size:.8rem;color:var(--muted);line-height:1.5;margin:0 0 12px}
-  .od-opts{display:flex;flex-direction:column;gap:7px;margin:0 0 12px}
-  .od-opt{
+  .un-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 6px}
+  .un-title{font-size:1rem;font-weight:700;color:var(--text);margin:0}
+  .un-bal{font-size:.8rem;font-weight:700;color:var(--daily);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .un-sub{font-size:.8rem;color:var(--muted);line-height:1.5;margin:0 0 12px}
+  .un-opts{display:flex;flex-direction:column;gap:7px;margin:0 0 12px}
+  .un-opt{
     display:flex;align-items:center;gap:10px;
     padding:10px 12px;border-radius:12px;
     border:1px solid var(--line);background:var(--surface);
     font-size:.85rem;cursor:pointer;
   }
-  .od-opt input{accent-color:var(--daily);width:16px;height:16px;flex:none;cursor:pointer}
-  .od-opt span{flex:1}
-  .od-opt em{font-style:normal;color:var(--muted);font-size:.78rem;font-weight:700;white-space:nowrap}
-  .od-opt.on{border-color:var(--daily)}
-  .od-links{
+  .un-opt input{accent-color:var(--daily);width:16px;height:16px;flex:none;cursor:pointer}
+  .un-opt span{flex:1}
+  .un-opt em{font-style:normal;color:var(--muted);font-size:.78rem;font-weight:700;white-space:nowrap}
+  .un-opt.on{border-color:var(--daily)}
+  .un-links{
     display:flex;justify-content:center;gap:10px;align-items:center;
     margin-top:10px;font-size:.8rem;color:var(--muted);
   }
-  .od-links button{color:var(--muted);font-size:.8rem;font-weight:600;padding:4px}
-  .od-links button:hover{color:var(--text);text-decoration:underline}
-  .od-links button:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
-  .od-free{
+  .un-links button{color:var(--muted);font-size:.8rem;font-weight:600;padding:4px}
+  .un-links button:hover{color:var(--text);text-decoration:underline}
+  .un-links button:focus-visible{outline:2px solid var(--daily);outline-offset:2px}
+  .un-free{
     font-size:.78rem;color:var(--text);line-height:1.45;margin:0 0 10px;
     padding:9px 11px;border-radius:10px;
     background:color-mix(in srgb,var(--daily) 14%,transparent);
+  }
+
+  /* ---------- unlimited promo strip ---------- */
+  .un-strip{
+    margin-top:10px;font-size:.86rem;font-weight:700;
+    border-color:color-mix(in srgb,var(--daily) 45%,var(--line));
+    background:color-mix(in srgb,var(--daily) 10%,transparent);
+  }
+  .un-strip:hover{border-color:var(--daily)}
+
+  .un-opt{
+    display:flex;align-items:center;gap:9px;
+    font-size:.82rem;color:var(--text);cursor:pointer;
+  }
+  .un-opt input{accent-color:var(--daily);width:15px;height:15px;flex:none;cursor:pointer}
+
+  /* ---------- buyer email ---------- */
+  .buy-email{
+    margin:4px 0 14px;padding:13px 14px;
+    border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+  }
+  .buy-email[hidden]{display:none!important}
+
+  /* ---------- purchase confirmation ---------- */
+  .thanks-mark{
+    font-size:2.6rem;line-height:1;text-align:center;margin:2px 0 8px;
+    filter:drop-shadow(0 0 18px color-mix(in srgb,var(--daily) 60%,transparent));
   }
 
   /* ---------- credit store ---------- */
@@ -625,12 +718,17 @@
 
     <div class="faq-item">
       <h3 class="faq-q">Is HUEMAN free?</h3>
-      <div class="faq-a"><p>Yes — the daily puzzle is completely free, forever, in your browser, with no account and no ads. There's one optional extra: <b>credits</b>, which buy additional runs at the same day's puzzle. Those extra runs compete on a separate <b>Overdrive</b> board, so nothing you can buy affects the main daily leaderboard. HUEMAN is a <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">Puzzle Page</a> game: discover more daily puzzle games, or build and publish your own, at <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">puzzlepage.app</a>.</p></div>
+      <div class="faq-a"><p>Yes — the daily puzzle is completely free, forever, in your browser, with no account and no ads. There's one optional extra: <b>credits</b>, which buy additional runs at the same day's puzzle. Those extra runs compete on a separate <b>Unlimited</b> board, so nothing you can buy affects the main daily leaderboard. HUEMAN is a <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">Puzzle Page</a> game: discover more daily puzzle games, or build and publish your own, at <a href="https://www.puzzlepage.app/play" target="_blank" rel="noopener">puzzlepage.app</a>.</p></div>
     </div>
 
     <div class="faq-item">
-      <h3 class="faq-q">What is the Overdrive board?</h3>
-      <div class="faq-a"><p>HUEMAN has two daily leaderboards. The <b>Daily</b> board ranks everyone's first run of the day — three lives, standard clock, no assistance — and once your run is filed it can never be changed, by you or by anyone paying for anything. The <b>Overdrive</b> board ranks your best run of the day however many you take, and every free player is entered on it automatically with their single run. Credits buy more attempts at the same puzzle everyone else got, plus optional handicaps like an extra life or a slower clock. They never make the odd tile easier to see.</p></div>
+      <h3 class="faq-q">What is the Unlimited board?</h3>
+      <div class="faq-a"><p>HUEMAN has two daily leaderboards. The <b>Daily</b> board ranks everyone's first run of the day — three lives, standard clock, no assistance — and once your run is filed it can never be changed, by you or by anyone paying for anything. The <b>Unlimited</b> board ranks your best run of the day however many you take, and every free player is entered on it automatically with their single run. Credits buy more attempts at the same puzzle everyone else got, plus optional handicaps like an extra life or a slower clock. They never make the odd tile easier to see.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <h3 class="faq-q">How many practice rounds do I get?</h3>
+      <div class="faq-a"><p><b>One free practice round a day</b>, on top of the daily puzzle itself. A practice round uses random colors instead of the day's puzzle and is never ranked — it doesn't touch your streak, your stats or either leaderboard. If you want another go that actually counts toward a leaderboard, that's what an <b>Unlimited</b> run is: today's real puzzle again, ranked on the Unlimited board.</p></div>
     </div>
 
     <div class="faq-item">
@@ -693,6 +791,7 @@
     <div class="start-streak" id="startStreak" hidden></div>
     <button class="btn daily-tint" id="btnStart">Start today's puzzle</button>
     <button class="btn ghost" id="btnStartPractice" hidden>Practice round (unranked)</button>
+    <button class="btn ghost un-strip" id="btnStartUnlimited">⚡ HUEMAN Unlimited — play today's puzzle again</button>
     <div class="start-links">
       <button id="btnStartHelp">How to play</button>
       <span aria-hidden="true">·</span>
@@ -758,12 +857,38 @@
   <div class="card">
     <button class="close-x" id="btnResClose" aria-label="Close">×</button>
     <h2 id="resTitle">Out of lives!</h2>
-    <div class="result-big" id="resLevel">Level 12</div>
-    <div class="result-pct" id="resPct">Sharper than ~84% of players</div>
-    <div class="result-time" id="resTime">⏱ 1:34 on the clock</div>
-    <div class="share-preview">
-      <div class="sp-head" id="spHead">HUEMAN #1</div>
-      <div id="spGrid">🟦🟩🟨</div>
+    <div class="runcard" id="runCard">
+      <div class="rc-top">
+        <span class="rc-day" id="rcDay">HUEMAN #1</span>
+        <span class="rc-chip" id="rcChip" hidden></span>
+      </div>
+      <div class="rc-hero">
+        <div class="rc-score">
+          <b class="rc-num" id="rcLevel">12</b>
+          <span class="rc-of">of 60<em id="rcLab">levels cleared</em></span>
+        </div>
+        <span class="rc-pct" id="rcPct">Top 20%</span>
+      </div>
+      <div class="rc-climb">
+        <div class="rc-marks" id="rcMarks" aria-hidden="true"></div>
+        <div class="rc-track" id="rcTrack" role="img" aria-label="">
+          <i class="rc-fill" id="rcFill" style="--pos:0%"></i>
+          <i class="rc-avg" id="rcAvg" style="--pos:0%"></i>
+          <i class="rc-ghost" id="rcGhost" hidden style="--pos:0%"></i>
+          <i class="rc-head" id="rcHead" style="--pos:0%"></i>
+        </div>
+        <div class="rc-scale" aria-hidden="true">
+          <span class="rc-s-a">1</span>
+          <span class="rc-s-avg" id="rcSAvg" style="--pos:0%">avg 9</span>
+          <span class="rc-s-b">60</span>
+        </div>
+      </div>
+      <div class="rc-foot">
+        <span class="rc-lives" id="rcLives" aria-hidden="true"></span>
+        <span class="rc-foot-txt" id="rcFoot"></span>
+        <span class="rc-time" id="rcTime"></span>
+      </div>
+      <p class="rc-key">The bar is how far up the 60-level climb this run got. Each <b>✕</b> is a life lost.</p>
     </div>
     <button class="btn daily-tint" id="btnShare">Challenge your friends</button>
     <div class="share-row" aria-label="Share your score on">
@@ -778,7 +903,7 @@
       <h3 class="lb-title">🌍 Today's leaderboard</h3>
       <div class="lb-tabs" role="tablist" aria-label="Leaderboard">
         <button class="lb-tab" role="tab" data-mini-board="daily" aria-selected="true">🌍 Daily</button>
-        <button class="lb-tab" role="tab" data-mini-board="overdrive" aria-selected="false">⚡ Overdrive</button>
+        <button class="lb-tab" role="tab" data-mini-board="unlimited" aria-selected="false">⚡ Unlimited</button>
       </div>
       <p class="lb-note" id="lbMiniNote"></p>
       <div id="lbJoin" hidden>
@@ -791,25 +916,25 @@
       <div class="lb-list" id="lbMini"></div>
       <button class="btn ghost" id="lbFull" hidden>See the full board →</button>
     </div>
-    <!-- OVERDRIVE: optional paid extra runs. Hidden until the player's free run
+    <!-- UNLIMITED: optional paid extra runs. Hidden until the player's free run
          is filed, and never required — the daily game above is complete without it. -->
-    <div class="od-block" id="odBlock" hidden>
-      <div class="od-head">
-        <h3 class="od-title">⚡ Overdrive — go again</h3>
-        <span class="od-bal" id="odBal"></span>
+    <div class="un-block" id="unBlock" hidden>
+      <div class="un-head">
+        <h3 class="un-title">⚡ Unlimited — go again</h3>
+        <span class="un-bal" id="unBal"></span>
       </div>
-      <p class="od-sub" id="odSub"></p>
-      <p class="od-free" id="odFree" hidden></p>
-      <div class="od-opts">
-        <label class="od-opt" id="odOptLife1"><input type="checkbox" id="odLife1"><span>+1 life — start with 4</span><em id="odCostLife1"></em></label>
-        <label class="od-opt" id="odOptLife2"><input type="checkbox" id="odLife2"><span>+2 lives — start with 5</span><em id="odCostLife2"></em></label>
-        <label class="od-opt" id="odOptSlow"><input type="checkbox" id="odSlow"><span>Slow clock — 40% more time each level</span><em id="odCostSlow"></em></label>
+      <p class="un-sub" id="unSub"></p>
+      <p class="un-free" id="unFree" hidden></p>
+      <div class="un-opts">
+        <label class="un-opt" id="unOptLife1"><input type="checkbox" id="unLife1"><span>+1 life — start with 4</span><em id="unCostLife1"></em></label>
+        <label class="un-opt" id="unOptLife2"><input type="checkbox" id="unLife2"><span>+2 lives — start with 5</span><em id="unCostLife2"></em></label>
+        <label class="un-opt" id="unOptSlow"><input type="checkbox" id="unSlow"><span>Slow clock — 40% more time each level</span><em id="unCostSlow"></em></label>
       </div>
-      <button class="btn daily-tint" id="odGo">Run again</button>
-      <div class="od-links">
-        <button id="odStore">Get credits</button>
+      <button class="btn daily-tint" id="unGo">Run again</button>
+      <div class="un-links">
+        <button id="unStore">Get credits</button>
         <span aria-hidden="true">·</span>
-        <button id="odWhat">What's Overdrive?</button>
+        <button id="unWhat">What's Unlimited?</button>
       </div>
     </div>
     <button class="btn ghost" id="btnPractice">Practice round (unranked)</button>
@@ -855,7 +980,7 @@
     <p class="sub" id="lbSub">Today's sharpest eyes worldwide.</p>
     <div class="lb-tabs" role="tablist" aria-label="Leaderboard">
       <button class="lb-tab" role="tab" data-full-board="daily" aria-selected="true">🌍 Daily</button>
-      <button class="lb-tab" role="tab" data-full-board="overdrive" aria-selected="false">⚡ Overdrive</button>
+      <button class="lb-tab" role="tab" data-full-board="unlimited" aria-selected="false">⚡ Unlimited</button>
     </div>
     <p class="lb-note" id="lbFullNote"></p>
     <div class="lb-list" id="lbList"></div>
@@ -869,8 +994,14 @@
   <div class="card">
     <button class="close-x" data-close aria-label="Close">×</button>
     <h2>⚡ Credits</h2>
-    <p class="sub">Credits buy extra runs at today's puzzle on the Overdrive board. The daily game stays free, forever — this is strictly seconds.</p>
-    <p class="od-free" id="storeBal"></p>
+    <p class="sub">Credits buy extra runs at today's puzzle on the Unlimited board. The daily game stays free, forever — this is strictly seconds.</p>
+    <p class="un-free" id="storeBal"></p>
+    <div class="buy-email" id="buyEmail">
+      <label class="fine" for="crEmail" style="display:block;margin-bottom:6px">Email for your receipt and restore code <span style="opacity:.7">(optional)</span></label>
+      <input class="lb-input" id="crEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" style="margin-bottom:8px">
+      <label class="un-opt" id="crOptWrap"><input type="checkbox" id="crOptin"><span>Also email me when each new daily puzzle drops</span></label>
+      <p class="fine" style="margin-top:8px">We'll email your restore code so you can get your credits back if you clear site data or switch device. Leave it blank and Stripe still emails a payment receipt.</p>
+    </div>
     <div class="pack-grid" id="packGrid"></div>
     <p class="fine" id="storeClosed" hidden>Credit top-ups aren't switched on yet. Your free credits still work — go spend them.</p>
     <p class="fine">One-time payment, no subscription, no account. Credits never expire. Payments are handled by Stripe; HUEMAN never sees your card.</p>
@@ -884,14 +1015,64 @@
   </div>
 </div>
 
-<!-- WHAT IS OVERDRIVE -->
-<div class="overlay" id="ovOd" hidden>
+<!-- PURCHASE CONFIRMATION (shown on return from Stripe) -->
+<div class="overlay" id="ovThanks" hidden>
+  <div class="card start-card">
+    <div class="thanks-mark" aria-hidden="true">⚡</div>
+    <h2 style="text-align:center">Thanks — you're set</h2>
+    <p class="sub" id="thanksState" style="text-align:center">Confirming your payment…</p>
+    <p class="un-free" id="thanksBal" hidden></p>
+    <div class="restore-box" id="thanksRestore" hidden>
+      <p class="fine" style="margin-bottom:6px">Save this code. Your credits live in this browser — this is how you get them back if you clear site data or switch device.</p>
+      <p class="restore-code" id="thanksCode">—</p>
+    </div>
+    <button class="btn daily-tint" id="thanksGo" hidden style="margin-top:14px">Use my credits</button>
+    <p class="fine" style="margin-top:14px;text-align:center">A receipt is on its way from Stripe.</p>
+  </div>
+</div>
+
+<!-- UNLIMITED SPOTLIGHT (once a day, after the free run) -->
+<div class="overlay" id="ovPromo" hidden>
+  <div class="card start-card">
+    <div class="thanks-mark" aria-hidden="true">⚡</div>
+    <h2 style="text-align:center">HUEMAN <span style="color:var(--daily)">Unlimited</span></h2>
+    <p class="sub" style="text-align:center">One puzzle a day is the whole point. But some days one isn't enough.</p>
+    <ul class="start-rules">
+      <li>🔁 Run today's puzzle again — as many times as you like</li>
+      <li>🏆 Your best run lands on the <b>Unlimited board</b></li>
+      <li>❤️ Optional extra lives and a slower clock, if you want them</li>
+      <li>🌍 Your Daily result stays exactly as it is — nothing you buy can touch that board</li>
+    </ul>
+    <p class="un-free" id="promoBal"></p>
+    <button class="btn daily-tint" id="promoGo">Show me Unlimited</button>
+    <button class="btn ghost" data-close>Maybe tomorrow</button>
+    <p class="fine" style="margin-top:14px;text-align:center">You'll only see this once a day.</p>
+  </div>
+</div>
+
+<!-- PRACTICE CAP REACHED -->
+<div class="overlay" id="ovPracticeUp" hidden>
   <div class="card">
     <button class="close-x" data-close aria-label="Close">×</button>
-    <h2>⚡ What's Overdrive?</h2>
+    <h2>That's today's practice</h2>
+    <p class="sub">Practice is one free round a day. It's unranked — it never counted toward the leaderboard anyway.</p>
+    <p>Want another go that <b>actually counts</b>? An <b>Unlimited</b> run puts you back on today's puzzle — the same one everyone else got — and your best run lands on the Unlimited board.</p>
+    <p class="un-free" id="pracBal"></p>
+    <button class="btn daily-tint" id="pracUnlimited">Take an Unlimited run</button>
+    <button class="btn ghost" id="pracStore">Get credits</button>
+    <button class="btn ghost" data-close>Not now</button>
+    <p class="fine" style="margin-top:14px">Today's daily puzzle is free and always will be, and your result is already locked into the Daily board. Nothing you buy can change that board — Unlimited is a separate one.</p>
+  </div>
+</div>
+
+<!-- WHAT IS UNLIMITED -->
+<div class="overlay" id="ovUn" hidden>
+  <div class="card">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>⚡ What's Unlimited?</h2>
     <p class="sub">Two boards, one puzzle. Here's the honest version.</p>
     <p><b>🌍 Daily</b> is your first run of the day, exactly as you played it — three lives, standard clock, no help. It's filed the moment you finish and <b>nothing can change it</b>. No credit, boost or purchase can put a row on this board or move one.</p>
-    <p><b>⚡ Overdrive</b> is your best run of the day, however many you take. Your free run is already on it — if it's good enough, you can top Overdrive without spending a thing.</p>
+    <p><b>⚡ Unlimited</b> is your best run of the day, however many you take. Your free run is already on it — if it's good enough, you can top Unlimited without spending a thing.</p>
     <p>Credits buy extra attempts at the <b>same puzzle everyone else got</b>, plus optional handicaps on those attempts. They don't make tiles easier to see, and they can't touch the Daily board.</p>
     <p class="fine">Every new player gets free credits, so your first extra run costs nothing. If you never buy any, you lose access to precisely nothing.</p>
     <button class="btn daily-tint" data-close>Got it</button>
@@ -986,7 +1167,7 @@ function resultUrl(day, level, grid){
 
 /* ============ state ============ */
 let rng, level, lives, locked, practice=false, gameActive=false;
-/* Overdrive: a credit-funded extra run carries a server-signed token plus the
+/* Unlimited: a credit-funded extra run carries a server-signed token plus the
    handicaps it paid for. Null for the free daily run, which is never modified. */
 let maxLives = 3, timeMult = 1, activeRun = null;
 let history = [];   // {h, missed}
@@ -1008,6 +1189,58 @@ function loadHist(){
 }
 function saveHist(h){ store.set("hm_hist", JSON.stringify(h)); }
 function playedToday(){ return !!loadHist()[DAY]; }
+
+/* ============ practice rounds ==============================================
+   One free practice a day. Practice is unranked and always was — the cap exists
+   so "just one more go" has somewhere to land (an Unlimited run) instead of
+   being free and infinite, which made the ranked day feel pointless.
+
+   Tracked in this browser, like streaks and history. A determined player can
+   clear storage and practice again; that's the same trade the whole no-account
+   model already makes, and it isn't worth an account to close.
+============================================================================ */
+const PRACTICE_PER_DAY = 1;
+function practiceUsed(){
+  try{
+    const p = JSON.parse(store.get("hm_prac")||"{}");
+    return +p[DAY] || 0;
+  }catch(e){ return 0; }
+}
+function practiceLeft(){ return Math.max(0, PRACTICE_PER_DAY - practiceUsed()); }
+function notePractice(){
+  let p = {};
+  try{ p = JSON.parse(store.get("hm_prac")||"{}") || {}; }catch(e){}
+  p[DAY] = practiceUsed() + 1;
+  // Keep only the current day; older counts have no meaning.
+  store.set("hm_prac", JSON.stringify({ [DAY]: p[DAY] }));
+}
+/* The single gate both practice buttons go through. */
+function startPractice(){
+  if(practiceLeft() <= 0){ openPracticeUp(); return; }
+  notePractice();
+  try{ va('event',{name:'practice_start',data:{day:DAY}}); }catch(e){}
+  document.querySelectorAll(".overlay").forEach(o=>o.hidden = true);
+  freshGame(true);
+}
+function practiceLabel(){
+  return practiceLeft() > 0 ? "Practice round (1 free per day)" : "Practice used — see Unlimited";
+}
+function syncPracticeButtons(){
+  const label = practiceLabel();
+  const a = $("btnPractice"), b = $("btnStartPractice");
+  if(a) a.textContent = label;
+  if(b) b.textContent = label;
+}
+function openPracticeUp(){
+  try{ va('event',{name:'practice_capped',data:{day:DAY,credits:CR.credits}}); }catch(e){}
+  const go = ()=>{
+    $("pracBal").textContent = CR.loaded
+      ? `You have ${crPlural(CR.credits, "credit")}.`
+      : "";
+    $("ovPracticeUp").hidden = false;
+  };
+  if(CR.loaded) go(); else crFetch().then(go).catch(go);
+}
 
 /* ============ late-game obstacles (unlocked at L30/40/50/60) ============ */
 const MAX_LEVEL = 60;   // top-out level (intentionally undocumented in the UI)
@@ -1040,7 +1273,7 @@ function applyObstacles(lv){
 /* ============ timer ============ */
 let timerId=null, timeLeft=0, timeCap=1, totalMs=0;
 /* seconds; floor keeps late levels survivable. timeMult is 1 for every free run
-   and only rises on an Overdrive run that bought the slow clock. */
+   and only rises on an Unlimited run that bought the slow clock. */
 function levelTime(lv){ return Math.max(5, 12 - lv*0.4) * timeMult; }
 function overlayOpen(){
   return !$("ovStart").hidden || !$("ovHelp").hidden || !$("ovStats").hidden || !$("ovNotify").hidden;
@@ -1073,7 +1306,7 @@ function fmtClock(ms){
   return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
 }
 
-/* `run` is present only for a paid Overdrive attempt: {token, lives, timeMult, n}.
+/* `run` is present only for a paid Unlimited attempt: {token, lives, timeMult, n}.
    Called with no run — every free and practice game — this behaves exactly as
    it always has: three lives, standard clock, today's seed. */
 function freshGame(isPractice, run){
@@ -1085,7 +1318,7 @@ function freshGame(isPractice, run){
   timeMult = activeRun ? activeRun.timeMult : 1;
   level=1; lives=maxLives; locked=false; history=[]; totalMs=0;
   $("prompt").textContent = practice ? "Practice — tap the odd shade out"
-    : activeRun ? "⚡ Overdrive run — tap the odd shade out"
+    : activeRun ? "⚡ Unlimited run — tap the odd shade out"
     : "Tap the odd shade out";
   renderLevel();
 }
@@ -1152,6 +1385,106 @@ function loseLife(){
   }, 850);
 }
 
+/* ============ the climb (run display) ======================================
+   Mirrors api/_lib/climb.ts — the server renders the same track on /r/ pages
+   and the OG image, so a run can never look like two different things. */
+const AVG_LEVEL = 9, CLIMB_GAMMA = 0.55, CLUSTER_PCT = 4.5;
+function climbPos(level){
+  const t = Math.min(1, Math.max(0, level / MAX_LEVEL));
+  return t ? Math.pow(t, CLIMB_GAMMA) * 100 : 0;
+}
+/* Live run: history[] holds one {h,missed} per attempt. */
+function missLevelsFromHistory(hist){
+  const out=[]; let cleared=0;
+  for(const e of hist){ if(e.missed) out.push(cleared+1); else cleared++; }
+  return out;
+}
+/* Saved run: the stored emoji grid decodes to cells (6 = miss). Same walk, so
+   nothing needed migrating and old share links still render. */
+function missLevelsFromCells(cells){
+  const out=[]; let cleared=0;
+  for(const c of cells){ if(c===6) out.push(cleared+1); else cleared++; }
+  return out;
+}
+function clusterMisses(levels){
+  const out=[];
+  for(const lv of levels.slice().sort((a,b)=>a-b)){
+    const p = climbPos(lv), last = out[out.length-1];
+    if(last && p - last.pos < CLUSTER_PCT){
+      last.levels.push(lv); last.n++;
+      last.pos = last.levels.reduce((sum,l)=>sum+climbPos(l),0)/last.n;
+    } else out.push({pos:p, n:1, levels:[lv]});
+  }
+  return out;
+}
+/* "6, 11 and 12" — and "5 (×3)" when a run died repeatedly on one level, which
+   is common and reads as a typo if listed as "5, 5 and 5". */
+function listLevels(a){
+  const runs=[];
+  for(const lv of a.slice().sort((x,y)=>x-y)){
+    const last=runs[runs.length-1];
+    if(last && last.lv===lv) last.n++; else runs.push({lv,n:1});
+  }
+  const parts=runs.map(r=>r.n>1?`${r.lv} (×${r.n})`:String(r.lv));
+  return parts.length<2 ? parts[0] : parts.slice(0,-1).join(", ")+" and "+parts[parts.length-1];
+}
+function distinctLevels(a){ return new Set(a).size; }
+
+/* o = {day, level, ms, pct, missLevels, maxLives, unlimited, runN, dailyLevel} */
+function renderRunCard(o){
+  const pos = climbPos(o.level);
+  const cleared = o.level >= MAX_LEVEL;
+  const lost = o.missLevels.length;
+  const left = Math.max(0, o.maxLives - lost);
+
+  $("rcDay").textContent = `HUEMAN #${o.day}`;
+  $("rcChip").hidden = !o.unlimited;
+  if(o.unlimited) $("rcChip").textContent = `⚡ Unlimited · Run ${o.runN}`;
+
+  $("rcLevel").textContent = o.level;
+  $("rcLab").textContent = cleared ? "the full climb" : "levels cleared";
+  $("rcPct").textContent = `Top ${100 - o.pct}%`;
+
+  $("rcFill").style.setProperty("--pos", pos+"%");
+  $("rcHead").style.setProperty("--pos", pos+"%");
+  const avg = climbPos(AVG_LEVEL);
+  $("rcAvg").style.setProperty("--pos", avg+"%");
+  $("rcSAvg").style.setProperty("--pos", avg+"%");
+  $("rcSAvg").textContent = "avg "+AVG_LEVEL;
+
+  // On an Unlimited run, mark where this player's own free run ended, so the
+  // gain is visible without doing arithmetic.
+  const ghost = $("rcGhost");
+  ghost.hidden = !(o.unlimited && o.dailyLevel);
+  if(!ghost.hidden) ghost.style.setProperty("--pos", climbPos(o.dailyLevel)+"%");
+
+  const track = $("rcTrack");
+  [...track.querySelectorAll(".rc-notch")].forEach(n=>n.remove());
+  const clusters = clusterMisses(o.missLevels);
+  $("rcMarks").innerHTML = clusters
+    .map(c=>`<span style="--pos:${c.pos}%">✕${c.n>1?c.n:""}</span>`).join("");
+  clusters.forEach(c=>{
+    const i = document.createElement("i");
+    i.className = "rc-notch";
+    i.style.setProperty("--pos", c.pos+"%");
+    track.appendChild(i);
+  });
+
+  $("rcLives").textContent = "●".repeat(left) + "○".repeat(lost);
+  $("rcFoot").textContent = cleared
+    ? `🏁 Cleared all ${MAX_LEVEL}` + (lost ? ` — ${lost} ${lost>1?"lives":"life"} spent on the way` : " without losing a life")
+    : lost
+      ? `${left ? `${left} ${left>1?"lives":"life"} left` : `All ${o.maxLives} lives spent`} — lost at level${lost>1?"s":""} ${listLevels(o.missLevels)}`
+      : "No lives lost";
+  $("rcTime").textContent = `⏱ ${fmtClock(o.ms)}`;
+
+  // One sentence, instead of a screen reader announcing fifteen coloured squares.
+  track.setAttribute("aria-label",
+    `Reached level ${o.level} of ${MAX_LEVEL}, further than about ${o.pct} percent of players. `+
+    (lost ? `Lost ${lost} ${lost>1?"lives":"life"}, at level${distinctLevels(o.missLevels)>1?"s":""} ${listLevels(o.missLevels)}. ` : "No lives lost. ")+
+    `Time ${fmtClock(o.ms)}.`);
+}
+
 /* ============ end + share ============ */
 function shareGrid(){
   let out="", row=0;
@@ -1161,10 +1494,25 @@ function shareGrid(){
   }
   return out.trim();
 }
-function shareText(score, ms, grid, od){
+/* A fixed ten-cell bar rather than one square per level: constant length for a
+   3-level or a 60-level run, obviously a progress bar to anyone, and the
+   "Level X of 60" line above it is its own legend. All of today's players post
+   the same accent hue, which keeps the collectible texture the old grid had. */
+function shareBar(level){
+  const filled = Math.max(1, Math.round(climbPos(level) / 10));
+  const hue = levelColors(mulberry32(DAY*7919+13), 1).h;
+  return hueEmoji(hue).repeat(filled) + "⬛".repeat(10 - filled);
+}
+function shareText(score, ms, grid, od, missLevels){
   const url = resultUrl(DAY, score, grid)+"?utm_source=share";
-  const tag = od ? " ⚡Overdrive" : "";
-  return `HUEMAN #${DAY} 🎨${tag}\nLevel ${score} in ${fmtClock(ms)} · Top ${100-percentile(score)}%\n\n${grid}\n\nThink your eyes are sharper? ${url}`;
+  const tag = od ? "  ⚡Unlimited" : "";
+  const miss = missLevels || [];
+  const foot = score >= MAX_LEVEL
+    ? "🏁 Cleared the whole climb"
+    : miss.length
+      ? `💔 lives lost at level${distinctLevels(miss)>1?"s":""} ${listLevels(miss)}`
+      : "💚 no lives lost";
+  return `HUEMAN #${DAY} 🎨${tag}\nLevel ${score} of ${MAX_LEVEL} · ${fmtClock(ms)} · Top ${100-percentile(score)}%\n\n${shareBar(score)}\n${foot}\n\nCan your eyes beat that? ${url}`;
 }
 
 /* wire the big share button (native sheet on mobile) + per-platform buttons.
@@ -1210,22 +1558,21 @@ function endGame(){
   stopTimer();
   clearObstacles();
   gameActive = false;
-  const run = activeRun;            // set only for a paid Overdrive attempt
+  const run = activeRun;            // set only for a paid Unlimited attempt
   activeRun = null;
   const finalScore = Math.max(1, level-1);   // last level completed (floor of 1)
   const pct = percentile(finalScore);
   const grid = shareGrid();
 
   $("resTitle").textContent = practice ? "Practice over"
-    : run ? (pct>=90 ? "Superhueman. ⚡" : "Overdrive run "+run.n)
+    : run ? (pct>=90 ? "Superhueman. ⚡" : "Unlimited run "+run.n)
     : (pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Out of lives!");
-  $("resLevel").textContent = "Level "+finalScore;
-  $("resPct").textContent = practice ? "Practice rounds aren't ranked"
-    : run ? `⚡ Filed on Overdrive · sharper than ~${pct}% of players (est.)`
-    : `Sharper than ~${pct}% of players (est.)`;
-  $("resTime").textContent = `⏱ ${fmtClock(totalMs)} on the clock`;
-  $("spHead").textContent = `HUEMAN #${DAY}${run?" ⚡":""} · Level ${finalScore} · ${fmtClock(totalMs)} · Top ${100-pct}%`;
-  $("spGrid").textContent = grid;
+  renderRunCard({
+    day: DAY, level: finalScore, ms: totalMs, pct,
+    missLevels: missLevelsFromHistory(history), maxLives,
+    unlimited: !!run, runN: run ? run.n : 0,
+    dailyLevel: run ? (loadHist()[DAY]||{}).l : null
+  });
   const showShare = practice ? "none" : "";
   $("btnShare").style.display = showShare;
   document.querySelector(".share-row").style.display = showShare;
@@ -1234,23 +1581,25 @@ function endGame(){
 
   if(!practice){
     // Streak, stats and the day's canonical history entry all belong to the
-    // free run. An Overdrive attempt records its own best and nothing else, so
+    // free run. An Unlimited attempt records its own best and nothing else, so
     // paying can never inflate a streak or rewrite the day's result.
-    if(run) saveOdBest(finalScore, totalMs, grid);
+    if(run) saveUnBest(finalScore, totalMs, grid);
     else saveResult(finalScore, grid);
     syncStartCard();
-    wireShareButtons(shareText(finalScore, totalMs, grid, !!run), resultUrl(DAY, finalScore, grid));
-    try{ va('event',{name: run?'overdrive_complete':'game_complete',data:{day:DAY,level:finalScore,run:run?run.n:0}}); }catch(e){}
+    wireShareButtons(shareText(finalScore, totalMs, grid, !!run, missLevelsFromHistory(history)), resultUrl(DAY, finalScore, grid));
+    try{ va('event',{name: run?'unlimited_complete':'game_complete',data:{day:DAY,level:finalScore,run:run?run.n:0}}); }catch(e){}
     lbState.current = { level: finalScore, timeMs: totalMs, token: run ? run.token : null };
-    lbMiniBoard = run ? "overdrive" : "daily";
+    lbMiniBoard = run ? "unlimited" : "daily";
     lbMountResult();
     lbSubmit(finalScore, totalMs, run ? run.token : null);
-    odMount();
+    unMount();
+    if(!run) maybePromo();
   }else{
-    $("odBlock").hidden = true;
+    $("unBlock").hidden = true;
   }
   tickCountdown();
-  $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
+  $("btnPractice").onclick = startPractice;
+  syncPracticeButtons();
 }
 
 /* re-open the result screen from a saved day (already played) */
@@ -1259,26 +1608,29 @@ function showSavedResult(){
   if(!e) return;
   practice = false;                 // this screen is always the ranked result
   const pct = e.p;
-  const od = loadOd()[DAY];
+  const od = loadUn()[DAY];
   $("resTitle").textContent = pct>=90 ? "Superhueman." : pct>=60 ? "Sharp eyes." : "Today's result";
-  $("resLevel").textContent = "Level "+e.l;
-  $("resPct").textContent = od && od.l > e.l
-    ? `Sharper than ~${pct}% of players (est.) · ⚡ Overdrive best: Level ${od.l}`
-    : `Sharper than ~${pct}% of players (est.)`;
-  $("resTime").textContent = `⏱ ${fmtClock(e.t)} on the clock`;
-  $("spHead").textContent = `HUEMAN #${DAY} · Level ${e.l} · ${fmtClock(e.t)} · Top ${100-pct}%`;
-  $("spGrid").textContent = e.g;
+  renderRunCard({
+    day: DAY, level: e.l, ms: e.t, pct,
+    missLevels: missLevelsFromCells(cellsFromGrid(e.g)), maxLives: 3,
+    unlimited: false, runN: 0, dailyLevel: null
+  });
+  if(od && od.l > e.l){
+    $("rcChip").hidden = false;
+    $("rcChip").textContent = `⚡ Unlimited best · Lv ${od.l}`;
+  }
   $("btnShare").style.display = "";
   document.querySelector(".share-row").style.display = "";
-  wireShareButtons(shareText(e.l, e.t, e.g, false), resultUrl(DAY, e.l, e.g));
+  wireShareButtons(shareText(e.l, e.t, e.g, false, missLevelsFromCells(cellsFromGrid(e.g))), resultUrl(DAY, e.l, e.g));
   $("ovResult").hidden = false;
   $("resLeader").hidden = false;
   lbState.current = { level: e.l, timeMs: e.t, token: null };
   lbMountResult();
   lbSubmit(e.l, e.t, null);
-  odMount();
+  unMount();
   tickCountdown();
-  $("btnPractice").onclick = ()=>{ $("ovResult").hidden=true; freshGame(true); };
+  $("btnPractice").onclick = startPractice;
+  syncPracticeButtons();
 }
 
 function saveResult(score, grid){
@@ -1297,17 +1649,17 @@ function saveResult(score, grid){
   saveHist(hist);
 }
 
-/* Overdrive bests are kept apart from hm_hist so the Statistics screen, the
+/* Unlimited bests are kept apart from hm_hist so the Statistics screen, the
    streak and the shareable daily result all keep describing the free run. */
-function loadOd(){
-  try{ return JSON.parse(store.get("hm_od")||"{}") || {}; }catch(e){ return {}; }
+function loadUn(){
+  try{ return JSON.parse(store.get("hm_un")||"{}") || {}; }catch(e){ return {}; }
 }
-function saveOdBest(score, ms, grid){
-  const all = loadOd();
+function saveUnBest(score, ms, grid){
+  const all = loadUn();
   const prev = all[DAY];
   if(!prev || score > prev.l || (score === prev.l && ms < prev.t)){
     all[DAY] = { l:score, t:Math.round(ms), g:grid };
-    store.set("hm_od", JSON.stringify(all));
+    store.set("hm_un", JSON.stringify(all));
   }
 }
 
@@ -1339,11 +1691,19 @@ function renderHistory(){
     el.innerHTML = '<div class="hist-empty">No games yet — play today\'s puzzle to start your history and your streak.</div>';
     return;
   }
+  const un = loadUn();
   el.innerHTML = days.map(d=>{
     const e = hist[d];
+    const miss = missLevelsFromCells(cellsFromGrid(e.g));
+    const pos = climbPos(e.l);
+    const notches = clusterMisses(miss)
+      .map(c=>`<i class="rc-notch" style="--pos:${c.pos}%"></i>`).join("");
+    const badge = un[d] && un[d].l > e.l
+      ? `<span class="hist-unl" title="Unlimited best: level ${un[d].l}">⚡${un[d].l}</span>` : "";
     return `<div class="hist-row">
       <span class="hist-day">#${d}</span>
-      <span class="hist-grid">${e.g.replace(/\n/g,"")}</span>
+      <span class="hist-climb"><span class="rc-track" role="img" aria-label="Puzzle ${d}: level ${e.l} of ${MAX_LEVEL}, ${miss.length} lives lost"><i class="rc-fill" style="--pos:${pos}%"></i><i class="rc-head" style="--pos:${pos}%"></i>${notches}</span></span>
+      ${badge}
       <span class="hist-lv">Lv ${e.l} · Top ${100-e.p}%</span>
     </div>`;
   }).join("");
@@ -1408,12 +1768,41 @@ async function sharePlayerCard(){
     x.fillText(label, bx+bw/2, by+130);
   });
 
-  // today's emoji run (if played)
+  // today's climb (if played)
   const today=loadHist()[DAY];
   if(today){
-    x.font="44px sans-serif";
-    const lines=today.g.split("\n").slice(0,2);
-    lines.forEach((ln,i)=> x.fillText(ln, W/2, 900+i*56));
+    const miss = missLevelsFromCells(cellsFromGrid(today.g));
+    const TX=150, TW=780, TY=886, TH=38, R=TH/2;
+    const atPct = p => TX + TW*(p/100);
+
+    x.fillStyle="#8C8C98"; x.font="600 26px Inter,sans-serif";
+    x.fillText(`TODAY'S CLIMB · #${DAY}`, W/2, TY-22);
+
+    x.fillStyle="#17171D"; cardRoundRect(x,TX,TY,TW,TH,R); x.fill();
+    x.strokeStyle="#2A2A33"; x.lineWidth=2; cardRoundRect(x,TX,TY,TW,TH,R); x.stroke();
+
+    x.save(); cardRoundRect(x,TX,TY,TW,TH,R); x.clip();
+    const grad = x.createLinearGradient(TX,0,TX+TW,0);
+    grad.addColorStop(0,"#1E2A33"); grad.addColorStop(1,accent);
+    x.fillStyle=grad; x.fillRect(TX,TY,TW*(climbPos(today.l)/100),TH);
+    clusterMisses(miss).forEach(c=>{
+      x.fillStyle="#0E0E12"; x.fillRect(atPct(c.pos)-4, TY, 8, TH);
+      x.fillStyle="#E0524D"; x.fillRect(atPct(c.pos)-4, TY, 1, TH); x.fillRect(atPct(c.pos)+3, TY, 1, TH);
+    });
+    x.strokeStyle="#8C8C98"; x.lineWidth=2; x.setLineDash([4,5]);
+    x.beginPath(); x.moveTo(atPct(climbPos(AVG_LEVEL)),TY); x.lineTo(atPct(climbPos(AVG_LEVEL)),TY+TH); x.stroke();
+    x.setLineDash([]); x.restore();
+
+    x.fillStyle="#F4F2EC";
+    x.fillRect(Math.min(TX+TW-5, Math.max(TX+1, atPct(climbPos(today.l))-2.5)), TY-3, 5, TH+6);
+
+    x.font="600 22px Inter,sans-serif"; x.fillStyle="#8C8C98";
+    x.textAlign="left";  x.fillText("1",  TX, TY+TH+28);
+    x.textAlign="right"; x.fillText(String(MAX_LEVEL), TX+TW, TY+TH+28);
+    x.textAlign="center";
+    x.fillStyle="#F4F2EC"; x.font="700 28px Inter,sans-serif";
+    x.fillText(`Level ${today.l} of ${MAX_LEVEL} · Top ${100-today.p}%`
+      + (miss.length ? ` · ${miss.length} ${miss.length>1?"lives":"life"} lost` : ""), W/2, TY+TH+62);
   }else{
     x.fillStyle="#8C8C98"; x.font="600 30px Inter,sans-serif";
     x.fillText("Today's puzzle is waiting…", W/2, 910);
@@ -1448,7 +1837,7 @@ const lbState = { geo:"", current:null };
 let lbMiniBoard = "daily", lbFullBoard = "daily";
 const LB_NOTE = {
   daily: "First run only — three lives, standard clock. Credits can't touch this board.",
-  overdrive: "Best run of the day, extra runs included. Your free run is already here."
+  unlimited: "Best run of the day, extra runs included. Your free run is already here."
 };
 const COUNTRIES = [
   ["AF","Afghanistan"],["AL","Albania"],["DZ","Algeria"],["AD","Andorra"],["AO","Angola"],
@@ -1530,7 +1919,7 @@ function lbMeta(e){
   return h ? `<span class="lb-meta">${h}</span>` : "";
 }
 
-/* Attempt count, shown on Overdrive only — it's the one number that makes the
+/* Attempt count, shown on Unlimited only — it's the one number that makes the
    difference between a one-shot run and a bought-in one visible to everyone. */
 function lbRuns(e){
   return e && e.runs > 1 ? `<span class="lb-runs" title="${e.runs} runs today">⚡${e.runs}</span>` : "";
@@ -1606,7 +1995,7 @@ function lbMountResult(){
   lbRenderMini();
 }
 
-/* `token` is the signed proof of a paid Overdrive run; without it the server
+/* `token` is the signed proof of a paid Unlimited run; without it the server
    files the result on the Daily board (and only ever the first time). */
 function lbSubmit(level, timeMs, token){
   if(!lbJoined()) return;            // wait until the player has joined
@@ -1688,9 +2077,9 @@ $("lbSave").onclick = ()=>{
 };
 lbFlush();
 
-/* ============ credits & Overdrive ============================================
+/* ============ credits & Unlimited ============================================
    Everything below is additive. If the wallet endpoint is unreachable, the
-   store never opens, the Overdrive card stays hidden, and the game is exactly
+   store never opens, the Unlimited card stays hidden, and the game is exactly
    the free daily puzzle it was before.
 ============================================================================ */
 const CR = {
@@ -1721,74 +2110,74 @@ function crMoney(cents){
 }
 function crPlural(n, word){ return n + " " + word + (n===1?"":"s"); }
 
-/* ---- the Overdrive offer (result screen) ---- */
-function odCost(){
+/* ---- the Unlimited offer (result screen) ---- */
+function unCost(){
   const s = CR.spend;
   if(!s) return 0;
-  const extraLives = $("odLife2").checked ? 2 : ($("odLife1").checked ? 1 : 0);
-  return s.rerun.credits + extraLives*s.life.credits + ($("odSlow").checked ? s.slowclock.credits : 0);
+  const extraLives = $("unLife2").checked ? 2 : ($("unLife1").checked ? 1 : 0);
+  return s.rerun.credits + extraLives*s.life.credits + ($("unSlow").checked ? s.slowclock.credits : 0);
 }
 
-function odRefresh(){
+function unRefresh(){
   if(!CR.spend) return;
-  const cost = odCost();
+  const cost = unCost();
   const canPay = CR.credits >= cost;
-  $("odBal").textContent = crPlural(CR.credits, "credit");
-  $("odGo").textContent = canPay
+  $("unBal").textContent = crPlural(CR.credits, "credit");
+  $("unGo").textContent = canPay
     ? `Run again — ${crPlural(cost, "credit")}`
     : (CR.storeOpen ? `Get credits — need ${cost}, you have ${CR.credits}` : `Not enough credits (need ${cost})`);
-  $("odGo").disabled = !canPay && !CR.storeOpen;
-  $("odGo").style.opacity = ($("odGo").disabled) ? ".55" : "";
-  ["odOptLife1","odOptLife2","odOptSlow"].forEach((id,i)=>{
-    const inp = [$("odLife1"),$("odLife2"),$("odSlow")][i];
+  $("unGo").disabled = !canPay && !CR.storeOpen;
+  $("unGo").style.opacity = ($("unGo").disabled) ? ".55" : "";
+  ["unOptLife1","unOptLife2","unOptSlow"].forEach((id,i)=>{
+    const inp = [$("unLife1"),$("unLife2"),$("unSlow")][i];
     $(id).classList.toggle("on", inp.checked);
   });
   // Only claim "free" while the player is still on the welcome grant — once
   // they've bought credits, spending them isn't free and shouldn't say so.
   const spent = store.get("hm_spent")==="1";
   const free = !spent && cost > 0 && CR.credits >= cost && CR.credits <= (CR.rules.welcomeCredits||0);
-  $("odFree").hidden = !free;
-  if(free) $("odFree").textContent = `🎁 Your starting credits are on us — this run costs you nothing.`;
+  $("unFree").hidden = !free;
+  if(free) $("unFree").textContent = `🎁 Your starting credits are on us — this run costs you nothing.`;
 }
 
-function odMount(){
-  if(practice){ $("odBlock").hidden = true; return; }
+function unMount(){
+  if(practice){ $("unBlock").hidden = true; return; }
   const show = ()=>{
     if(!CR.spend) return;
     const s = CR.spend, r = CR.rules;
-    $("odCostLife1").textContent = crPlural(s.life.credits, "credit");
-    $("odCostLife2").textContent = crPlural(s.life.credits*2, "credit");
-    $("odCostSlow").textContent  = crPlural(s.slowclock.credits, "credit");
-    $("odOptLife2").hidden = r.maxLives < r.baseLives + 2;
-    $("odSub").textContent =
-      "Today's run is locked into the Daily board for good. Overdrive is a second board for extra attempts at the same puzzle — your free run is already on it.";
-    $("odBlock").hidden = false;
-    odRefresh();
+    $("unCostLife1").textContent = crPlural(s.life.credits, "credit");
+    $("unCostLife2").textContent = crPlural(s.life.credits*2, "credit");
+    $("unCostSlow").textContent  = crPlural(s.slowclock.credits, "credit");
+    $("unOptLife2").hidden = r.maxLives < r.baseLives + 2;
+    $("unSub").textContent =
+      "Today's run is locked into the Daily board for good. Unlimited is a second board for extra attempts at the same puzzle — your free run is already on it.";
+    $("unBlock").hidden = false;
+    unRefresh();
   };
   if(CR.loaded) show();
-  else crFetch().then(show).catch(()=>{ $("odBlock").hidden = true; });
+  else crFetch().then(show).catch(()=>{ $("unBlock").hidden = true; });
 }
 
 /* +1 and +2 lives are alternatives, not cumulative. */
-$("odLife1").onchange = ()=>{ if($("odLife1").checked) $("odLife2").checked = false; odRefresh(); };
-$("odLife2").onchange = ()=>{ if($("odLife2").checked) $("odLife1").checked = false; odRefresh(); };
-$("odSlow").onchange  = odRefresh;
-$("odWhat").onclick   = ()=> $("ovOd").hidden = false;
-$("odStore").onclick  = ()=> openStore();
+$("unLife1").onchange = ()=>{ if($("unLife1").checked) $("unLife2").checked = false; unRefresh(); };
+$("unLife2").onchange = ()=>{ if($("unLife2").checked) $("unLife1").checked = false; unRefresh(); };
+$("unSlow").onchange  = unRefresh;
+$("unWhat").onclick   = ()=> $("ovUn").hidden = false;
+$("unStore").onclick  = ()=> openStore();
 
-$("odGo").onclick = ()=>{
-  const cost = odCost();
+$("unGo").onclick = ()=>{
+  const cost = unCost();
   if(CR.credits < cost){ openStore(); return; }
   if(!lbJoined()){
-    // Overdrive is a leaderboard, so a run that can't be filed isn't worth
+    // Unlimited is a leaderboard, so a run that can't be filed isn't worth
     // charging for — collect the name first.
     toast("Add your name first so your run can be ranked");
     $("lbJoin").hidden = false; $("lbAs").hidden = true; $("lbName").focus();
     return;
   }
-  const extraLives = $("odLife2").checked ? 2 : ($("odLife1").checked ? 1 : 0);
-  const slowClock = $("odSlow").checked;
-  const btn = $("odGo");
+  const extraLives = $("unLife2").checked ? 2 : ($("unLife1").checked ? 1 : 0);
+  const slowClock = $("unSlow").checked;
+  const btn = $("unGo");
   btn.disabled = true; btn.textContent = "Starting…";
   fetch("/api/spend", {
     method:"POST", headers:{"Content-Type":"application/json"},
@@ -1797,18 +2186,18 @@ $("odGo").onclick = ()=>{
     .then(({ok,status,d})=>{
       btn.disabled = false;
       if(!ok){
-        if(status===402){ CR.credits = d.credits ?? CR.credits; odRefresh(); openStore(); return; }
-        if(status===429){ toast("That's the daily run cap — see you tomorrow"); odRefresh(); return; }
+        if(status===402){ CR.credits = d.credits ?? CR.credits; unRefresh(); openStore(); return; }
+        if(status===429){ toast("That's the daily run cap — see you tomorrow"); unRefresh(); return; }
         if(status===409 && d.error==="stale_day"){ toast("A new puzzle just dropped — reloading"); setTimeout(()=>location.reload(), 1200); return; }
-        toast("Couldn't start that run — no credits were taken"); odRefresh(); return;
+        toast("Couldn't start that run — no credits were taken"); unRefresh(); return;
       }
       CR.credits = d.credits;
       store.set("hm_spent","1");
-      try{ va('event',{name:'overdrive_start',data:{day:DAY,run:d.run,spent:d.spent}}); }catch(e){}
+      try{ va('event',{name:'unlimited_start',data:{day:DAY,run:d.run,spent:d.spent}}); }catch(e){}
       $("ovResult").hidden = true;
       freshGame(false, { token:d.token, lives:d.lives, timeMult:d.timeMult, n:d.run });
     })
-    .catch(()=>{ btn.disabled = false; toast("Network hiccup — no credits were taken"); odRefresh(); });
+    .catch(()=>{ btn.disabled = false; toast("Network hiccup — no credits were taken"); unRefresh(); });
 };
 
 /* ---- the store ---- */
@@ -1839,6 +2228,9 @@ function renderPacks(){
 
 function renderStore(){
   $("storeBal").textContent = `You have ${crPlural(CR.credits, "credit")}.`;
+  const saved = store.get("hm_email") || "";
+  if(saved && !$("crEmail").value) $("crEmail").value = saved;
+  $("buyEmail").hidden = !CR.storeOpen;
   $("restoreCode").textContent = CR.restore || "—";
   renderPacks();
 }
@@ -1858,9 +2250,12 @@ function buyPack(sku, btn){
   const label = btn ? btn.innerHTML : "";
   if(btn){ btn.disabled = true; btn.style.opacity = ".6"; }
   try{ va('event',{name:'checkout_start',data:{day:DAY,sku}}); }catch(e){}
+  const email = ($("crEmail").value||"").trim();
+  const marketing = $("crOptin").checked;
+  if(email) store.set("hm_email", email);   // so the field survives the trip to Stripe
   fetch("/api/checkout", {
     method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ pid: lbPid(), sku })
+    body: JSON.stringify({ pid: lbPid(), sku, email: email || undefined, marketing })
   }).then(r=>r.ok ? r.json() : Promise.reject(new Error("checkout")))
     .then(d=>{
       if(!d || !d.url) throw new Error("checkout");
@@ -1885,7 +2280,7 @@ $("restoreGo").onclick = ()=>{
     .then(d=>{
       crApply(d);
       $("restoreIn").value = "";
-      renderStore(); odRefresh();
+      renderStore(); unRefresh();
       toast(`Restored — you have ${crPlural(CR.credits, "credit")}`);
     })
     .catch(()=>toast("That code didn't match a balance"));
@@ -1900,26 +2295,72 @@ $("restoreGo").onclick = ()=>{
   if(!state) return;
   const clean = location.pathname + location.hash;
   try{ history.replaceState(null, "", clean); }catch(e){}
+  // replaceState can be blocked (sandboxed frames, some in-app browsers), which
+  // would leave ?credits=ok in the URL and re-run this whole flow on every
+  // refresh. Remember that this return was handled so a reload is a no-op.
+  const handledKey = "hm_ret:" + state;
+  try{
+    if(sessionStorage.getItem(handledKey)) return;
+    sessionStorage.setItem(handledKey, "1");
+  }catch(e){}
   let pending = null;
   try{ pending = JSON.parse(store.get("hm_pending")||"null"); }catch(e){}
   store.set("hm_pending","");
   if(state !== "ok"){ toast("Checkout cancelled — nothing was charged"); return; }
 
   try{ va('event',{name:'checkout_return',data:{day:DAY}}); }catch(e){}
-  toast("Payment received — adding your credits…");
+
+  // Someone who just paid lands on a fresh page load, which would otherwise
+  // drop them on the start screen with a toast that fades in two seconds —
+  // indistinguishable from the payment having failed. Take over the screen
+  // with a confirmation that stays put until they dismiss it.
+  const ov = $("ovThanks");
+  $("thanksState").textContent = "Confirming your payment…";
+  $("thanksBal").hidden = true;
+  $("thanksRestore").hidden = true;
+  $("thanksGo").hidden = true;
+  ov.hidden = false;
+
   const target = pending ? (pending.before||0) + (pending.add||1) : 1;
+  const bought = pending ? (pending.add||0) : 0;
   let tries = 0;
   (function poll(){
     crFetch().then(()=>{
       if(CR.credits >= target){
-        renderStore(); odRefresh();
-        toast(`Credits added — you have ${crPlural(CR.credits, "credit")}`);
+        $("thanksState").textContent = bought
+          ? `${crPlural(bought, "credit")} added to your account.`
+          : "Your credits have been added.";
+        $("thanksBal").textContent = `You now have ${crPlural(CR.credits, "credit")}.`;
+        $("thanksBal").hidden = false;
+        if(CR.restore){
+          // Shown here because this is the one moment the player definitely
+          // cares: credits live in this browser, and this code is the only way
+          // to get them back after clearing site data or switching device.
+          $("thanksCode").textContent = CR.restore;
+          $("thanksRestore").hidden = false;
+        }
+        $("thanksGo").hidden = false;
+        renderStore(); unRefresh();
         return;
       }
-      if(++tries < 8) setTimeout(poll, 1500);
-      else toast("Payment received — your credits will appear shortly");
-    }).catch(()=>{ if(++tries < 8) setTimeout(poll, 1500); });
+      if(++tries < 8) return setTimeout(poll, 1500);
+      $("thanksState").innerHTML =
+        "Your payment went through. The credits are taking a moment to land — " +
+        "they'll be here when you refresh. Nothing is lost.";
+      $("thanksGo").hidden = false;
+    }).catch(()=>{
+      if(++tries < 8) return setTimeout(poll, 1500);
+      $("thanksState").textContent = "Your payment went through — reload in a moment to see your credits.";
+      $("thanksGo").hidden = false;
+    });
   })();
+
+  $("thanksGo").onclick = ()=>{
+    ov.hidden = true;
+    // Straight to where the credits get spent, rather than back to a start screen.
+    if(playedToday()){ $("ovStart").hidden = true; showSavedResult(); }
+    else { $("ovStart").hidden = false; syncStartCard(); }
+  };
 })();
 
 /* ============ get notified ============ */
@@ -2041,6 +2482,7 @@ function syncStartCard(){
     $("startTag").innerHTML = "You've already solved today's puzzle.<br>The next one drops at midnight UTC.";
     $("btnStart").textContent = "See today's result";
     $("btnStartPractice").hidden = false;
+    syncPracticeButtons();
   }else{
     $("startTag").innerHTML = "One tile is hiding in plain sight.<br>Find it. Beat the clock. Outsee everyone.";
     $("btnStart").textContent = "Start today's puzzle";
@@ -2052,7 +2494,45 @@ $("btnStart").onclick = ()=>{
   if(playedToday()) showSavedResult();
   else freshGame(false);
 };
-$("btnStartPractice").onclick = ()=>{ $("ovStart").hidden=true; freshGame(true); };
+$("btnStartPractice").onclick = startPractice;
+
+/* Practice-cap screen → the place where an extra run is actually bought. */
+$("pracUnlimited").onclick = ()=>{
+  $("ovPracticeUp").hidden = true;
+  if(playedToday()){ $("ovStart").hidden = true; showSavedResult(); }
+  const card = $("unBlock");
+  if(card) setTimeout(()=>card.scrollIntoView({block:"center", behavior:"smooth"}), 120);
+};
+$("pracStore").onclick = ()=>{ $("ovPracticeUp").hidden = true; openStore(); };
+
+/* ---- Unlimited spotlight: once a day, and only after the FREE run ----------
+   Deliberately fires after the result screen has already rendered, so the
+   player sees their score, share grid and leaderboard place first. The daily
+   game is the product; this is a footnote to it, not a toll gate. */
+function maybePromo(){
+  if(store.get("hm_promo") === String(DAY)) return;   // already shown today
+  if(!playedToday()) return;
+  store.set("hm_promo", String(DAY));
+  const show = ()=>{
+    $("promoBal").textContent = CR.loaded && CR.credits > 0
+      ? `You already have ${crPlural(CR.credits, "credit")} to spend.`
+      : "";
+    $("promoBal").hidden = !$("promoBal").textContent;
+    $("ovPromo").hidden = false;
+    try{ va('event',{name:'unlimited_promo',data:{day:DAY}}); }catch(e){}
+  };
+  setTimeout(()=>{ CR.loaded ? show() : crFetch().then(show).catch(show); }, 2600);
+}
+$("promoGo").onclick = ()=>{
+  $("ovPromo").hidden = true;
+  try{ va('event',{name:'unlimited_promo_click',data:{day:DAY}}); }catch(e){}
+  const card = $("unBlock");
+  if(card) setTimeout(()=>card.scrollIntoView({block:"center", behavior:"smooth"}), 120);
+};
+$("btnStartUnlimited").onclick = ()=>{
+  try{ va('event',{name:'unlimited_strip_click',data:{day:DAY}}); }catch(e){}
+  $("ovUn").hidden = false;
+};
 $("btnStartHelp").onclick = ()=> $("ovHelp").hidden=false;
 $("btnStartStats").onclick = openStats;
 $("btnResClose").onclick = ()=>{

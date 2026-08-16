@@ -11,7 +11,7 @@ import {
   RETENTION_DAYS,
   compositeScore,
   rankForScore,
-  rankForScoreOd,
+  rankForScoreUnlimited,
 } from "./_lib/board.js";
 import { ensureSeeded } from "./_lib/seed.js";
 import { verifyRunToken } from "./_lib/token.js";
@@ -19,7 +19,7 @@ import { BASE_LIVES } from "./_lib/credits.js";
 
 const PID_RE = /^[a-z0-9]{8,40}$/i;
 // Submissions per IP per day. Headroom for the free run plus a full day of
-// Overdrive attempts (capped at 20 in /api/spend) and the odd retry.
+// Unlimited attempts (capped at 20 in /api/spend) and the odd retry.
 const RATE_LIMIT = 60;
 
 function clientIp(req: VercelRequest): string {
@@ -100,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ts = Date.now();
 
     // A valid run token means this result came from a credit-funded extra run,
-    // so it belongs on Overdrive. Everything else is the player's one free run
+    // so it belongs on Unlimited. Everything else is the player's one free run
     // of the day and belongs on the pure Daily board.
     const claims = verifyRunToken(body.token);
     const paid = !!claims && claims.pid === pid && claims.day === DAY;
@@ -122,29 +122,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await sql`UPDATE runs SET used = true WHERE day = ${DAY} AND pid = ${pid} AND n = ${claims!.n}`;
     }
 
-    // Overdrive takes every run from everyone — free players included, with
+    // Unlimited takes every run from everyone — free players included, with
     // their single attempt — and keeps the best. Buying credits buys more
     // chances at this board, not a better starting position on it.
     await sql`
-      INSERT INTO scores_od (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
+      INSERT INTO scores_unlimited (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
       VALUES (${DAY}, ${pid}, ${name}, ${country}, ${level}, ${timeMs}, ${score},
               ${attempts}, ${boosted}, ${ts})
       ON CONFLICT (day, pid) DO UPDATE SET
         name = EXCLUDED.name, country = EXCLUDED.country, level = EXCLUDED.level,
         time_ms = EXCLUDED.time_ms, score = EXCLUDED.score,
         boosted = EXCLUDED.boosted, ts = EXCLUDED.ts
-      WHERE EXCLUDED.score > scores_od.score
+      WHERE EXCLUDED.score > scores_unlimited.score
     `;
     // Attempt count tracks the whole day, not just the winning run, so it is
     // updated even when this run failed to beat the player's own best.
     await sql`
-      UPDATE scores_od SET runs = GREATEST(runs, ${attempts})
+      UPDATE scores_unlimited SET runs = GREATEST(runs, ${attempts})
       WHERE day = ${DAY} AND pid = ${pid}
     `;
 
     // Opportunistically prune days that have aged out of the viewable window.
     await sql`DELETE FROM scores WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
-    await sql`DELETE FROM scores_od WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
+    await sql`DELETE FROM scores_unlimited WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
     await sql`DELETE FROM runs WHERE day < ${DAY - (RETENTION_DAYS - 1)}`;
     await sql`DELETE FROM rate_limits WHERE day < ${DAY}`;
 
@@ -163,14 +163,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       total > 0 ? Math.max(1, Math.round((1 - (rank - 1) / total) * 100)) : 100;
 
     const odBestRows = (await sql`
-      SELECT score, runs FROM scores_od WHERE day = ${DAY} AND pid = ${pid}
+      SELECT score, runs FROM scores_unlimited WHERE day = ${DAY} AND pid = ${pid}
     `) as { score: number; runs: number }[];
     const odBest = odBestRows[0]?.score ?? null;
     const odTotalRows = (await sql`
-      SELECT count(*)::int AS total FROM scores_od WHERE day = ${DAY}
+      SELECT count(*)::int AS total FROM scores_unlimited WHERE day = ${DAY}
     `) as { total: number }[];
     const od = {
-      rank: odBest == null ? 0 : await rankForScoreOd(DAY, Number(odBest)),
+      rank: odBest == null ? 0 : await rankForScoreUnlimited(DAY, Number(odBest)),
       total: odTotalRows[0]?.total ?? 0,
       runs: odBestRows[0]?.runs ?? attempts,
     };
@@ -178,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       ok: true,
       day: DAY,
-      board: paid ? "overdrive" : "daily",
+      board: paid ? "unlimited" : "daily",
       rank,
       total,
       percentile,

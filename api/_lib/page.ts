@@ -28,11 +28,13 @@ export type ShellOpts = {
   bodyClass?: string;
 };
 
+import { CLIMB_CSS } from "./climb.js";
+
 const BASE_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0E0E12;--surface:#17171D;--surface-2:#1F1F27;--line:#2A2A33;
-  --text:#F4F2EC;--muted:#8C8C98;--daily:#4FA8D8;
+  --text:#F4F2EC;--muted:#8C8C98;--daily:#4FA8D8;--miss:#E0524D;
 }
 html{-webkit-text-size-adjust:100%}
 body{
@@ -79,6 +81,8 @@ footer.site a{color:var(--muted);font-weight:600}footer.site a:hover{color:var(-
 .motif{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;
   max-width:280px;aspect-ratio:1;margin:0 auto}
 .motif div{border-radius:12px}
+
+${CLIMB_CSS}
 `;
 
 /** Shared site header (wordmark links home; small nav). */

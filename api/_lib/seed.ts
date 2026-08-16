@@ -92,29 +92,29 @@ export function seedRowsForDay(day: number): SeedRow[] {
 // it correct across instances and concurrent cold starts regardless.
 const seededDays = new Set<number>();
 
-export type Board = "daily" | "overdrive";
+export type Board = "daily" | "unlimited";
 
 /**
  * Which boards still need holders, given what each already has.
  *
  * Deliberately checks the two boards independently. Inferring one board's state
- * from the other's is what left every pre-existing day with an empty Overdrive
+ * from the other's is what left every pre-existing day with an empty Unlimited
  * board when that board was introduced: those days already had holders in
- * `scores`, so seeding short-circuited before `scores_od` was ever considered.
+ * `scores`, so seeding short-circuited before `scores_unlimited` was ever considered.
  * Keeping this per-board means a future third board backfills the same way,
  * simply by being viewed.
  */
-export function boardsToSeed(hasDaily: boolean, hasOverdrive: boolean): Board[] {
+export function boardsToSeed(hasDaily: boolean, hasUnlimited: boolean): Board[] {
   const need: Board[] = [];
   if (!hasDaily) need.push("daily");
-  if (!hasOverdrive) need.push("overdrive");
+  if (!hasUnlimited) need.push("unlimited");
   return need;
 }
 
 /**
  * Idempotently ensure holding rows exist for `day` on both boards.
  *
- * Self-healing: a day whose Overdrive holders are missing gets them the next
+ * Self-healing: a day whose Unlimited holders are missing gets them the next
  * time that day is viewed or submitted to, so no separate backfill is needed.
  */
 export async function ensureSeeded(day: number): Promise<void> {
@@ -123,12 +123,12 @@ export async function ensureSeeded(day: number): Promise<void> {
 
   // Existing holders are never rewritten (they may come from an earlier seeding
   // scheme); each board is only filled if it has none of its own.
-  const [daily, overdrive] = (await Promise.all([
+  const [daily, unlimited] = (await Promise.all([
     sql`SELECT 1 FROM scores    WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1`,
-    sql`SELECT 1 FROM scores_od WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1`,
+    sql`SELECT 1 FROM scores_unlimited WHERE day = ${day} AND pid LIKE 'seed-%' LIMIT 1`,
   ])) as unknown[][];
 
-  const need = boardsToSeed(daily.length > 0, overdrive.length > 0);
+  const need = boardsToSeed(daily.length > 0, unlimited.length > 0);
   if (!need.length) {
     seededDays.add(day);
     return;
@@ -145,13 +145,13 @@ export async function ensureSeeded(day: number): Promise<void> {
           `,
         ]
       : []),
-    // Holders appear on Overdrive too, with a single unboosted run — the same
-    // rule real free players get, so an empty Overdrive board never greets a
+    // Holders appear on Unlimited too, with a single unboosted run — the same
+    // rule real free players get, so an empty Unlimited board never greets a
     // player who just spent credits.
-    ...(need.includes("overdrive")
+    ...(need.includes("unlimited")
       ? [
           sql`
-            INSERT INTO scores_od (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
+            INSERT INTO scores_unlimited (day, pid, name, country, level, time_ms, score, runs, boosted, ts)
             VALUES (${day}, ${r.pid}, ${r.name}, ${r.country}, ${r.level}, ${r.timeMs}, ${r.score}, 1, false, ${r.ts})
             ON CONFLICT (day, pid) DO NOTHING
           `,
