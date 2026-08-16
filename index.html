@@ -1075,7 +1075,10 @@
     <p><b>⚡ Unlimited</b> is your best run of the day, however many you take. Your free run is already on it — if it's good enough, you can top Unlimited without spending a thing.</p>
     <p>Credits buy extra attempts at the <b>same puzzle everyone else got</b>, plus optional handicaps on those attempts. They don't make tiles easier to see, and they can't touch the Daily board.</p>
     <p class="fine">Every new player gets free credits, so your first extra run costs nothing. If you never buy any, you lose access to precisely nothing.</p>
-    <button class="btn daily-tint" data-close>Got it</button>
+    <p class="un-free" id="unWhatBal" hidden></p>
+    <button class="btn daily-tint" id="unWhatGo">Take an Unlimited run</button>
+    <button class="btn ghost" id="unWhatStore">Get credits</button>
+    <button class="btn ghost" data-close>Close</button>
   </div>
 </div>
 
@@ -2157,12 +2160,26 @@ function unMount(){
   if(CR.loaded) show();
   else crFetch().then(show).catch(()=>{ $("unBlock").hidden = true; });
 }
+/* Bring an element into view inside the overlay's scroll container.
+   behavior:"smooth" is not dependable — it silently does nothing in some
+   embedded and reduced-motion contexts, and a scroll that quietly fails is the
+   same dead end as no scroll at all. Try smooth, then verify and force it. */
+function scrollToCard(el){
+  if(!el || el.hidden) return;
+  const box = el.closest(".card") || document.scrollingElement;
+  const before = box.scrollTop;
+  try{ el.scrollIntoView({block:"center", behavior:"smooth"}); }catch(e){}
+  setTimeout(()=>{
+    if(!el.hidden && box.scrollTop === before) el.scrollIntoView({block:"center"});
+  }, 400);
+}
+
 
 /* +1 and +2 lives are alternatives, not cumulative. */
 $("unLife1").onchange = ()=>{ if($("unLife1").checked) $("unLife2").checked = false; unRefresh(); };
 $("unLife2").onchange = ()=>{ if($("unLife2").checked) $("unLife1").checked = false; unRefresh(); };
 $("unSlow").onchange  = unRefresh;
-$("unWhat").onclick   = ()=> $("ovUn").hidden = false;
+$("unWhat").onclick   = openWhatUnlimited;
 $("unStore").onclick  = ()=> openStore();
 
 $("unGo").onclick = ()=>{
@@ -2496,14 +2513,47 @@ $("btnStart").onclick = ()=>{
 };
 $("btnStartPractice").onclick = startPractice;
 
-/* Practice-cap screen → the place where an extra run is actually bought. */
-$("pracUnlimited").onclick = ()=>{
-  $("ovPracticeUp").hidden = true;
-  if(playedToday()){ $("ovStart").hidden = true; showSavedResult(); }
-  const card = $("unBlock");
-  if(card) setTimeout(()=>card.scrollIntoView({block:"center", behavior:"smooth"}), 120);
-};
+/* Every "take me to Unlimited" affordance lands in the same place: the result
+   screen's Unlimited card, which is the only surface that shows the balance and
+   can actually start a run. An Unlimited run is a re-run of today's puzzle, so
+   it only exists once the free run is done — before that, the honest move is to
+   send them to the daily puzzle rather than a screen with nothing to press. */
+function goToUnlimited(){
+  document.querySelectorAll(".overlay").forEach(o=>o.hidden = true);
+  if(!playedToday()){
+    // Nothing to re-run yet. Start the day's puzzle instead of dead-ending.
+    freshGame(false);
+    toast("Play today's run first — then Unlimited opens up");
+    return;
+  }
+  showSavedResult();
+  let tries = 0;
+  (function settle(){
+    const card = $("unBlock");
+    if(card && !card.hidden){ scrollToCard(card); return; }
+    if(++tries < 40) setTimeout(settle, 50);   // give up after ~2s
+  })();
+}
+
+$("pracUnlimited").onclick = goToUnlimited;
 $("pracStore").onclick = ()=>{ $("ovPracticeUp").hidden = true; openStore(); };
+
+/* The explainer used to dead-end on "Got it". It now carries the balance and
+   the same two actions as everywhere else. */
+function openWhatUnlimited(){
+  const played = playedToday();
+  $("unWhatGo").textContent = played ? "Take an Unlimited run" : "Play today's puzzle first";
+  const show = ()=>{
+    const has = CR.loaded && CR.credits > 0;
+    $("unWhatBal").textContent = has ? `You have ${crPlural(CR.credits, "credit")} ready to spend.` : "";
+    $("unWhatBal").hidden = !has;
+    $("unWhatStore").hidden = !CR.storeOpen;
+    $("ovUn").hidden = false;
+  };
+  if(CR.loaded) show(); else crFetch().then(show).catch(show);
+}
+$("unWhatGo").onclick = goToUnlimited;
+$("unWhatStore").onclick = ()=>{ $("ovUn").hidden = true; openStore(); };
 
 /* ---- Unlimited spotlight: once a day, and only after the FREE run ----------
    Deliberately fires after the result screen has already rendered, so the
@@ -2526,12 +2576,14 @@ function maybePromo(){
 $("promoGo").onclick = ()=>{
   $("ovPromo").hidden = true;
   try{ va('event',{name:'unlimited_promo_click',data:{day:DAY}}); }catch(e){}
-  const card = $("unBlock");
-  if(card) setTimeout(()=>card.scrollIntoView({block:"center", behavior:"smooth"}), 120);
+  // The result screen is already open here, so the card is already mounted.
+  scrollToCard($("unBlock"));
 };
 $("btnStartUnlimited").onclick = ()=>{
-  try{ va('event',{name:'unlimited_strip_click',data:{day:DAY}}); }catch(e){}
-  $("ovUn").hidden = false;
+  try{ va('event',{name:'unlimited_strip_click',data:{day:DAY,played:playedToday()?1:0}}); }catch(e){}
+  // Already played: take them where credits and the Run again button live.
+  // Not yet: the explainer, which now has a way forward of its own.
+  if(playedToday()) goToUnlimited(); else openWhatUnlimited();
 };
 $("btnStartHelp").onclick = ()=> $("ovHelp").hidden=false;
 $("btnStartStats").onclick = openStats;
