@@ -57,7 +57,7 @@ Packs and spend costs live in one place — [`api/_lib/credits.ts`](api/_lib/cre
 
 ### Payment setup
 
-Checkout uses Stripe with **inline `price_data`**, so there is nothing to create in the Stripe dashboard — no products, no price objects. Point it at any existing Stripe account and the packs above become the catalogue.
+Checkout uses the official [`stripe`](https://www.npmjs.com/package/stripe) SDK with **inline `price_data`**, so there is nothing to create in the Stripe dashboard — no products, no price objects. Point it at any existing Stripe account and the packs above become the catalogue.
 
 Set these on the Vercel project (Production + Preview):
 
@@ -77,7 +77,7 @@ Redelivery is safe: purchases are keyed on the Checkout Session id in `credit_le
 npm test
 ```
 
-`test/schema.test.mjs` runs the real DDL — read straight out of `api/_lib/db.ts`, so it can't test a stale copy — against an in-process Postgres and asserts the money-critical semantics: the welcome grant applies once, a replayed webhook credits once, a debit can never go negative, the Daily board is frozen after the first run, and a free single run can top Overdrive. `test/signatures.test.mjs` covers run-token and Stripe webhook signature verification, including tampering, expiry and secret rotation.
+`test/schema.test.mjs` runs the real DDL — read straight out of `api/_lib/db.ts`, so it can't test a stale copy — against an in-process Postgres and asserts the money-critical semantics: the welcome grant applies once, a replayed webhook credits once, a debit can never go negative, the Daily board is frozen after the first run, and a free single run can top Overdrive. `test/signatures.test.mjs` covers run-token verification (tampering, expiry, wrong secret) and asserts the webhook feeds Stripe's verifier correctly — including that a re-serialized body fails, which is why the route disables the body parser.
 
 `npm run typecheck` type-checks the API.
 

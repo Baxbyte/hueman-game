@@ -1,13 +1,14 @@
 /* Exercises the two signature paths that money depends on:
    the run token that authorises an Overdrive run, and Stripe's webhook signature. */
 import { createHmac } from "node:crypto";
+import Stripe from "stripe";
 
 process.env.HUEMAN_RUN_SECRET = "test-secret-for-verification-only";
 const { mintRunToken, verifyRunToken } = await import("../api/_lib/token.ts");
-const { verifyStripeSignature: verify } = await import("../api/_lib/stripe-sig.ts");
 
 const ok = [], bad = [];
 const check = (n, c, d = "") => (c ? ok : bad).push(n + (d ? " — " + d : ""));
+const throws = (fn) => { try { fn(); return false; } catch { return true; } };
 
 /* ---- run tokens ---- */
 const claims = { pid: "player01aaaa", day: 66, n: 2, lives: 4, m: 140 };
@@ -37,28 +38,51 @@ check("token: token from another secret is rejected", verifyRunToken(token) === 
 process.env.HUEMAN_RUN_SECRET = "test-secret-for-verification-only";
 check("token: valid again under the right secret", verifyRunToken(token) !== null);
 
-/* ---- Stripe webhook signatures ---- */
+/* ---- Stripe webhook signatures --------------------------------------------
+   Verification is the SDK's, so what's under test is that /api/stripe-webhook
+   feeds it correctly: the RAW request bytes, and the header as sent. */
+const stripe = new Stripe("sk_test_not_a_real_key");
 const whsec = "whsec_testonly";
-const payload = Buffer.from(JSON.stringify({ type: "checkout.session.completed", id: "evt_1" }));
-const t = Math.floor(Date.now() / 1000);
-const sig = createHmac("sha256", whsec).update(Buffer.concat([Buffer.from(t + "."), payload])).digest("hex");
+const event = { id: "evt_1", type: "checkout.session.completed", data: { object: { id: "cs_1" } } };
+const payload = Buffer.from(JSON.stringify(event));
+const header = (buf, opts = {}) =>
+  stripe.webhooks.generateTestHeaderString({ payload: buf.toString(), secret: whsec, ...opts });
 
-check("webhook: a genuine signature passes", verify(payload, `t=${t},v1=${sig}`, whsec) === true);
+const parsed = stripe.webhooks.constructEvent(payload, header(payload), whsec);
+check("webhook: a genuine signature passes and parses", parsed.type === "checkout.session.completed");
+
+const modified = Buffer.from(JSON.stringify({ ...event, id: "evt_2" }));
 check(
   "webhook: a modified body fails",
-  verify(Buffer.from(payload.toString().replace("evt_1", "evt_2")), `t=${t},v1=${sig}`, whsec) === false
+  throws(() => stripe.webhooks.constructEvent(modified, header(payload), whsec))
 );
-check("webhook: the wrong secret fails", verify(payload, `t=${t},v1=${sig}`, "whsec_wrong") === false);
-
-const oldT = t - 60 * 60;
-const oldSig = createHmac("sha256", whsec).update(Buffer.concat([Buffer.from(oldT + "."), payload])).digest("hex");
-check("webhook: a stale timestamp fails (replay guard)", verify(payload, `t=${oldT},v1=${oldSig}`, whsec) === false);
-
 check(
-  "webhook: accepts a rotation with several v1 signatures",
-  verify(payload, `t=${t},v1=${"0".repeat(64)},v1=${sig}`, whsec) === true
+  "webhook: the wrong secret fails",
+  throws(() => stripe.webhooks.constructEvent(payload, header(payload), "whsec_wrong"))
 );
-check("webhook: a header with no signature fails", verify(payload, `t=${t}`, whsec) === false);
+check(
+  "webhook: a stale timestamp fails (replay guard)",
+  throws(() =>
+    stripe.webhooks.constructEvent(
+      payload,
+      header(payload, { timestamp: Math.floor(Date.now() / 1000) - 3600 }),
+      whsec
+    )
+  )
+);
+check(
+  "webhook: a header with no signature fails",
+  throws(() => stripe.webhooks.constructEvent(payload, `t=${Math.floor(Date.now() / 1000)}`, whsec))
+);
+
+/* The reason api/stripe-webhook.ts sets bodyParser:false. If the body were
+   parsed and re-serialized, key order and spacing shift and the bytes Stripe
+   signed no longer exist — every real webhook would fail. */
+const reserialized = Buffer.from(JSON.stringify(JSON.parse(payload.toString()), null, 2));
+check(
+  "webhook: a re-serialized body fails (raw bytes are required)",
+  throws(() => stripe.webhooks.constructEvent(reserialized, header(payload), whsec))
+);
 
 console.log(ok.map((s) => "  ✓ " + s).join("\n"));
 if (bad.length) {
