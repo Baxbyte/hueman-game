@@ -17,6 +17,20 @@ Live at **https://huemangame.com**, or open `index.html` in any browser.
 - **Get notified** — 🔔 in the header offers browser alerts for the daily drop and a downloadable `.ics` daily calendar reminder that syncs to phone, computer, and email.
 - **Streaks & stats** — played, best level, current and max streak, saved on-device.
 
+## How a run is displayed — the climb
+
+A finished run used to render as a row of hue-matched emoji squares. That artifact had a fundamental problem: **the hue carried no information.** Six of the seven glyphs (🟥🟧🟨🟩🟦🟪) all meant "cleared a level" — the colour was a fresh random hue per level, unrelated to difficulty, speed, or anything the player did. The only glyph that meant something, ⬛ for a life lost, was the faintest thing in the row. Noise was loud, signal was quiet. The square count never equalled the score either (one square per *attempt*, so a Level 12 run showed up to 15), and a strong run ran past sixty glyphs.
+
+The replacement follows from the shape of the data. Levels cleared is unbounded (1–60); lives lost is always at most a handful. So the unbounded thing is drawn **continuously** — a track filled to the level reached — and the bounded thing **discretely**, as notches cut out of that track. The footprint is constant whether you scored 3 or 60.
+
+- **Non-linear scale** (`γ = 0.55`). On a linear track the median run (~level 9) fills 15% and reads as failure, which is both discouraging and untrue — late levels cost far more than early ones. The curve puts the average player just past a third.
+- **Hue is never load-bearing.** Where the run stopped is a near-white cap (17:1 against the track); a life lost is a *gap* cut in the page colour. Both read in greyscale and under any colour vision deficiency — which matters, because `--daily` is a different random hue every day and the FAQ explicitly promises CVD playability.
+- **Screen readers get one sentence** ("Reached level 12 of 60… Lost 3 lives, at levels 6, 11 and 12"), not fifteen announced squares.
+
+`api/_lib/climb.ts` is the single source of truth, shared by the game, `/r/` pages, the OG image and the canvas player card. `index.html` is a standalone static file with no build step, so it carries its own copy of the track CSS — `npm run sync:climb` writes one into the other, and `npm test` fails if they drift.
+
+The pasted share text stays text-only emoji (that's the viral loop) but becomes a **fixed ten-cell bar**: constant length for any run, obviously a progress bar, with `Level 12 of 60` above it acting as its own legend. Nothing needed migrating — the display derives from data already stored, so every existing `/r/` link still renders.
+
 ## Two boards: Daily and Unlimited
 
 The free game is unchanged and always will be: one ranked run a day, three lives, standard clock, no account. What's new is a second board sitting beside it.
