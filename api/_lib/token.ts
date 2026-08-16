@@ -4,14 +4,14 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * Run tokens — proof that a boosted/extra run was actually paid for.
  *
  * /api/spend debits credits and mints one of these; /api/score will only file a
- * result on the Overdrive board if it arrives with a valid, unexpired token for
+ * result on the Unlimited board if it arrives with a valid, unexpired token for
  * that pid + day + run number. Without a token a submission is treated as the
  * player's one free run and lands on the Daily board.
  *
  * This is a spend gate, not an anti-cheat: the game is a static page, so a
  * determined player can always post whatever level they like. What the token
  * does buy is that credits can't be forged and a single purchase can't be
- * replayed into unlimited Overdrive entries.
+ * replayed into unlimited Unlimited entries.
  */
 
 const TTL_MS = 2 * 60 * 60 * 1000; // a run has two hours to be filed

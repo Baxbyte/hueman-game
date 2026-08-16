@@ -20,7 +20,7 @@ import { mintRunToken } from "./_lib/token.js";
  *
  * Charges the run plus whichever handicaps were chosen, records the run, and
  * returns a signed token the client hands back to /api/score. The result of
- * that run competes on Overdrive; the player's Daily-board entry is already
+ * that run competes on Unlimited; the player's Daily-board entry is already
  * filed and is never touched again.
  */
 

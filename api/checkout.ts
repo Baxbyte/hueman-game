@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { PID_RE, CURRENCY, packForSku } from "./_lib/credits.js";
 import { getStripe } from "./_lib/stripe.js";
+import { isEmail } from "./_lib/email.js";
 
 /**
  * POST /api/checkout { pid, sku } → { url }
@@ -69,6 +70,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const pack = packForSku(body.sku);
   if (!pack) return res.status(400).json({ error: "bad_sku" });
 
+  // Optional. Given, it pre-fills Stripe's form, gets Stripe to send its own
+  // payment receipt, and lets the webhook mail the restore code — the one piece
+  // of a purchase that is genuinely painful to lose.
+  const email = isEmail(body.email) ? body.email.trim().toLowerCase() : null;
+  const marketing = body.marketing === true && !!email;
+
   const site = origin(req);
 
   try {
@@ -95,8 +102,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Read back by the webhook. Credits are taken from metadata rather than
         // re-derived from the amount, so a price change can never retro-price an
         // in-flight session.
-        metadata: { pid, sku: pack.sku, credits: String(pack.credits) },
-        payment_intent_data: { metadata: { pid, sku: pack.sku } },
+        ...(email ? { customer_email: email } : {}),
+        metadata: {
+          pid,
+          sku: pack.sku,
+          credits: String(pack.credits),
+          ...(email ? { email, marketing: marketing ? "1" : "0" } : {}),
+        },
+        payment_intent_data: {
+          metadata: { pid, sku: pack.sku },
+          // Stripe's own payment receipt, separate from our credits email.
+          ...(email ? { receipt_email: email } : {}),
+        },
         allow_promotion_codes: true,
       },
       {

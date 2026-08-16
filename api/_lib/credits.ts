@@ -8,7 +8,7 @@ import { currentDay } from "./day.js";
  *  - The free run is untouched: 3 lives, standard clock, one ranked attempt a
  *    day, and it is the ONLY thing that can appear on the Daily board.
  *  - Credits buy *more attempts* at the same puzzle (and optional handicaps on
- *    those attempts), which compete on the separate Overdrive board.
+ *    those attempts), which compete on the separate Unlimited board.
  *  - Every wallet is created with WELCOME_CREDITS, so the first extra run is
  *    always free. Nobody hits a price tag before they've tried the thing.
  */
@@ -18,7 +18,7 @@ export const WELCOME_CREDITS = 3;
 
 /** What a credit buys. Costs are deliberately small multiples of a rerun. */
 export const SPEND = {
-  // A full extra ranked attempt at today's puzzle (Overdrive board).
+  // A full extra ranked attempt at today's puzzle (Unlimited board).
   rerun: { credits: 3, label: "Extra run" },
   // Start the run with 4 lives instead of 3. Stacks to a hard cap of 5.
   life: { credits: 2, label: "Extra life" },
@@ -89,7 +89,7 @@ export const PACKS: readonly Pack[] = [
     credits: 500,
     amount: 3999,
     name: "500 credits",
-    blurb: "A year of Overdrive",
+    blurb: "A year of Unlimited",
   },
 ];
 

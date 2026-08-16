@@ -1,4 +1,4 @@
-/* Guards the seeding decision that left Overdrive empty on every day that
+/* Guards the seeding decision that left Unlimited empty on every day that
    already existed when the board was introduced. */
 import { boardsToSeed, seedRowsForDay } from "../api/_lib/seed.ts";
 
@@ -7,16 +7,16 @@ const check = (n, c, d = "") => (c ? ok : bad).push(n + (d ? " — " + d : ""));
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /* ---- the regression ----------------------------------------------------
-   A day seeded before Overdrive existed has holders in `scores` and none in
-   `scores_od`. The original code inferred "already seeded" from `scores`
-   alone and returned early, so those days never got an Overdrive board. */
+   A day seeded before Unlimited existed has holders in `scores` and none in
+   `scores_unlimited`. The original code inferred "already seeded" from `scores`
+   alone and returned early, so those days never got an Unlimited board. */
 check(
-  "a day with Daily holders but no Overdrive holders still seeds Overdrive",
-  eq(boardsToSeed(true, false), ["overdrive"]),
+  "a day with Daily holders but no Unlimited holders still seeds Unlimited",
+  eq(boardsToSeed(true, false), ["unlimited"]),
   JSON.stringify(boardsToSeed(true, false))
 );
 
-check("a brand new day seeds both boards", eq(boardsToSeed(false, false), ["daily", "overdrive"]));
+check("a brand new day seeds both boards", eq(boardsToSeed(false, false), ["daily", "unlimited"]));
 check("a fully seeded day seeds nothing", eq(boardsToSeed(true, true), []));
 check(
   "the mirror case seeds only Daily",

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ensureSchema } from "./_lib/db.js";
-import { PID_RE, packForSku, creditPurchase } from "./_lib/credits.js";
+import { PID_RE, packForSku, creditPurchase, getWallet } from "./_lib/credits.js";
+import { isEmail, recordSubscriber, sendCreditsReceipt } from "./_lib/email.js";
 import { getStripe, type Stripe } from "./_lib/stripe.js";
 
 /**
@@ -96,6 +97,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchema();
     const balance = await creditPurchase(pid, pack.sku, grant, sessionId);
+
+    // Credits are already granted at this point. Everything below is best
+    // effort and must never be able to turn a paid purchase into a failure —
+    // recordSubscriber and sendCreditsReceipt each swallow their own errors,
+    // and this whole block is skipped on a redelivery (balance == null) so a
+    // Stripe retry can't mail the same person twice.
+    if (balance != null) {
+      const email =
+        session.metadata?.email ||
+        session.customer_details?.email ||
+        session.customer_email ||
+        "";
+      if (isEmail(email)) {
+        await recordSubscriber(email, pid, "credits", session.metadata?.marketing === "1");
+        const wallet = await getWallet(pid);
+        await sendCreditsReceipt({
+          to: email,
+          credits: grant,
+          total: balance,
+          restore: wallet.restore,
+          amount: session.amount_total ?? 0,
+          currency: session.currency ?? "usd",
+        });
+      }
+    }
+
     return res.status(200).json({ received: true, applied: balance != null });
   } catch {
     // 500 asks Stripe to retry — the ledger's unique ref keeps that safe.
