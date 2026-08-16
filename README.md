@@ -13,7 +13,7 @@ Live at **https://huemangame.com**, or open `index.html` in any browser.
 ## Features
 
 - **Beat the clock** — every level has a shrinking time limit (11.6s at level 1, down to a 5s floor). Running out of time costs a life, same as a wrong tap. Your total time appears in your result and share card.
-- **Wordle-style sharing** — emoji grid of your run (one square per level, hue-matched; ⬛ = miss) with your level, time, percentile, and the game link. Uses the native share sheet on mobile, clipboard on desktop.
+- **Wordle-style sharing** — a fixed ten-cell progress bar in the day's accent hue, with your level out of 60, time, percentile, where you lost lives, and the game link. Uses the native share sheet on mobile, clipboard on desktop.
 - **Get notified** — 🔔 in the header offers browser alerts for the daily drop and a downloadable `.ics` daily calendar reminder that syncs to phone, computer, and email.
 - **Streaks & stats** — played, best level, current and max streak, saved on-device.
 
@@ -44,7 +44,7 @@ The free game is unchanged and always will be: one ranked run a day, three lives
 
 A free player's single run is entered on **both** boards automatically. That's the load-bearing detail: someone who never spends a cent can still top Unlimited, and nothing bought can displace anyone on Daily. Attempt counts are shown publicly on Unlimited (`⚡3`), so a bought-in score is never mistaken for a one-shot.
 
-Server-side, `scores` is the Daily board — written once per player per day and then frozen (a later run can update a display name, never a score). `scores_od` is Unlimited, best-run-wins.
+Server-side, `scores` is the Daily board — written once per player per day and then frozen (a later run can update a display name, never a score). `scores_unlimited` is Unlimited, best-run-wins. It shipped as `scores_od` when the board was called Overdrive; `ensureSchema` renames it in place, and `/api/leaderboard` still answers to `board=overdrive` for cached clients.
 
 ## Credits
 
