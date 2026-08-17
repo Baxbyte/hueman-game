@@ -145,6 +145,7 @@ ${robots ? `<meta name="robots" content="${esc(robots)}">\n` : ""}<meta property
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${BASE_CSS}</style>${accentCss}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7140062618355569" crossorigin="anonymous"></script>
 ${head}</head>
 <body class="${bodyClass}">
 <div class="wrap">
