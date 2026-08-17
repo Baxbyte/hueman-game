@@ -69,6 +69,19 @@ Prices are anchored to two market reference points: the $0.99–$1.99 impulse ba
 
 Packs and spend costs live in one place — [`api/_lib/credits.ts`](api/_lib/credits.ts). Changing a price is a code change.
 
+## Ads
+
+The site runs Google AdSense (publisher `ca-pub-7140062618355569`). The loader sits in `<head>` on every surface — `index.html` for the game, and `api/_lib/page.ts`'s shell for `/r/`, `/archive` and `/learn` — plus `ads.txt` at the root, which Google requires to confirm who is authorised to sell the inventory.
+
+The script is `async`, so it can never block first paint or the first tap, and the game is fully playable if it is blocked or fails to load — verified with an ad blocker's effect simulated by the domain not yet being approved.
+
+Two deliberate constraints on where ad units may go, once the site is approved:
+
+- **Never adjacent to the board.** The game is a grid of tappable tiles under time pressure. An ad unit near it would collect accidental clicks, which is both a bad experience and an AdSense policy violation ("publishers may not implement ads in a way that results in accidental clicks"). Ad units belong below the fold, in the about/FAQ region, or between content blocks on `/learn` and `/archive`.
+- **Never inside a paid flow.** No ads in the credit store, the checkout return screen, or the Unlimited card.
+
+Note that adding ads made the previous "no ads" copy in the FAQ, the Product Hunt block and `llms.txt` untrue; all three were rewritten rather than left to be spotted by a player.
+
 ## Practice rounds
 
 **One free practice round a day**, on top of the daily puzzle itself. Practice uses random colors rather than the day's puzzle and has never been ranked — it doesn't touch streaks, stats, or either board. The cap exists so "one more go" has somewhere to land: past it, the game offers an Unlimited run instead of an endless free loop that makes the ranked day feel pointless.
